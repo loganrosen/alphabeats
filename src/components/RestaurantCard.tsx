@@ -117,6 +117,13 @@ export default function RestaurantCard({ restaurant: r }: { restaurant: Restaura
 
   const latestCritCount = (insp?.violations ?? []).filter(v => v.critical).length;
 
+  const oneYearAgo = new Date();
+  oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+  const recentViolations = allInspections
+    .filter(i => i.date && new Date(i.date) >= oneYearAgo)
+    .flatMap(i => i.violations);
+  const recentEmojis = [...new Set(recentViolations.map(v => violationEmoji(v.desc)))].join('');
+
   return (
     <div className="bg-white hover:bg-zinc-50 transition-colors p-5 flex flex-col gap-3 dark:bg-zinc-950 dark:hover:bg-zinc-900">
       <div className="flex justify-between items-start gap-4">
@@ -151,6 +158,7 @@ export default function RestaurantCard({ restaurant: r }: { restaurant: Restaura
           >
             <span className={`transition-transform ${historyOpen ? 'rotate-90' : ''}`}>▶</span>
             {allInspections.length} INSPECTION{allInspections.length !== 1 ? 'S' : ''}
+            {recentEmojis && <span className="ml-1" title="Violation types from the past 12 months">{recentEmojis}</span>}
           </button>
 
           {historyOpen && (
