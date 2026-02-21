@@ -18,20 +18,43 @@ const GRADE_TEXT: Record<string, string> = {
   C: 'text-red-600 dark:text-red-400',
 };
 
-function violationEmoji(desc: string): string {
+const VIOLATION_CATEGORIES: { emoji: string; label: string; test: (d: string) => boolean }[] = [
+  { emoji: '🐀', label: 'Rodents',          test: d => d.includes('mice') || d.includes('mouse') || d.includes('rodent') || d.includes('rat') || d.includes('droppings') },
+  { emoji: '🪳', label: 'Cockroaches',      test: d => d.includes('roach') || d.includes('cockroach') },
+  { emoji: '🪰', label: 'Insects / pests',  test: d => d.includes('fly') || d.includes('flies') || d.includes('insect') || d.includes('pest') },
+  { emoji: '🌡️', label: 'Temperature',     test: d => d.includes('temperature') || d.includes('cold') || d.includes('hot holding') || d.includes('thaw') || d.includes('refrigerat') },
+  { emoji: '🧼', label: 'Hand hygiene',     test: d => d.includes('hand wash') || d.includes('handwash') || d.includes('hand-wash') || d.includes('hygiene') || d.includes('bare hand') },
+  { emoji: '🚰', label: 'Plumbing',         test: d => d.includes('sewage') || d.includes('plumbing') || d.includes('drain') || d.includes('water supply') || d.includes('toilet') },
+  { emoji: '🧹', label: 'Sanitation',       test: d => d.includes('food contact') || d.includes('sanitiz') || d.includes('clean') || d.includes('wash') || d.includes('utensil') },
+  { emoji: '⚠️', label: 'Contamination',   test: d => d.includes('raw') || d.includes('cross-contam') || d.includes('contamina') },
+  { emoji: '🚬', label: 'Smoking',          test: d => d.includes('smoke') || d.includes('smoking') || d.includes('cigarette') },
+  { emoji: '🗑️', label: 'Waste / garbage', test: d => d.includes('garbage') || d.includes('waste') || d.includes('refuse') || d.includes('trash') },
+  { emoji: '📋', label: 'Permit / posting', test: d => d.includes('permit') || d.includes('license') || d.includes('sign') || d.includes('posted') || d.includes('notice') },
+];
+const DEFAULT_CATEGORY = { emoji: '📌', label: 'Other violation' };
+
+function violationCategory(desc: string) {
   const d = desc.toLowerCase();
-  if (d.includes('mice') || d.includes('mouse') || d.includes('rodent') || d.includes('rat') || d.includes('droppings')) return '🐀';
-  if (d.includes('roach') || d.includes('cockroach')) return '🪳';
-  if (d.includes('fly') || d.includes('flies') || d.includes('insect') || d.includes('pest')) return '🪰';
-  if (d.includes('temperature') || d.includes('cold') || d.includes('hot holding') || d.includes('thaw') || d.includes('refrigerat')) return '🌡️';
-  if (d.includes('hand wash') || d.includes('handwash') || d.includes('hand-wash') || d.includes('hygiene') || d.includes('bare hand')) return '🧼';
-  if (d.includes('sewage') || d.includes('plumbing') || d.includes('drain') || d.includes('water supply') || d.includes('toilet')) return '🚰';
-  if (d.includes('food contact') || d.includes('sanitiz') || d.includes('clean') || d.includes('wash') || d.includes('utensil')) return '🧹';
-  if (d.includes('raw') || d.includes('cross-contam') || d.includes('contamina')) return '⚠️';
-  if (d.includes('smoke') || d.includes('smoking') || d.includes('cigarette')) return '🚬';
-  if (d.includes('garbage') || d.includes('waste') || d.includes('refuse') || d.includes('trash')) return '🗑️';
-  if (d.includes('permit') || d.includes('license') || d.includes('sign') || d.includes('posted') || d.includes('notice')) return '📋';
-  return '📌';
+  return VIOLATION_CATEGORIES.find(c => c.test(d)) ?? DEFAULT_CATEGORY;
+}
+
+function violationEmoji(desc: string): string {
+  return violationCategory(desc).emoji;
+}
+
+function EmojiSet({ violations }: { violations: { desc: string }[] }) {
+  const seen = new Map<string, string>();
+  for (const v of violations) {
+    const { emoji, label } = violationCategory(v.desc);
+    if (!seen.has(emoji)) seen.set(emoji, label);
+  }
+  return (
+    <>
+      {[...seen.entries()].map(([emoji, label]) => (
+        <span key={emoji} title={label} className="cursor-default">{emoji}</span>
+      ))}
+    </>
+  );
 }
 
 function abbrevInspType(type: string | undefined): string {
@@ -62,7 +85,6 @@ function InspectionRow({ insp, isLatest }: { insp: Inspection; isLatest: boolean
   const [open, setOpen] = useState(false);
   const grade = insp.grade ?? null;
   const critCount = insp.violations.filter(v => v.critical).length;
-  const emojis = [...new Set(insp.violations.map(v => violationEmoji(v.desc)))].join('');
 
   return (
     <div className={`rounded border ${isLatest ? 'border-zinc-300 dark:border-zinc-600' : 'border-zinc-200 dark:border-zinc-800'}`}>
@@ -87,7 +109,7 @@ function InspectionRow({ insp, isLatest }: { insp: Inspection; isLatest: boolean
           {critCount > 0 && <span className="font-mono text-xs text-red-500 dark:text-red-400">{critCount}✕ crit</span>}
           {insp.violations.length > 0 && (
             <>
-              <span className="text-xs">{emojis}</span>
+              <span className="text-xs"><EmojiSet violations={insp.violations} /></span>
               <span className={`font-mono text-xs text-zinc-400 transition-transform ${open ? 'rotate-90' : ''}`}>▶</span>
             </>
           )}
@@ -122,7 +144,6 @@ export default function RestaurantCard({ restaurant: r }: { restaurant: Restaura
   const recentViolations = allInspections
     .filter(i => i.date && new Date(i.date) >= oneYearAgo)
     .flatMap(i => i.violations);
-  const recentEmojis = [...new Set(recentViolations.map(v => violationEmoji(v.desc)))].join('');
 
   return (
     <div className="bg-white hover:bg-zinc-50 transition-colors p-5 flex flex-col gap-3 dark:bg-zinc-950 dark:hover:bg-zinc-900">
@@ -158,7 +179,12 @@ export default function RestaurantCard({ restaurant: r }: { restaurant: Restaura
           >
             <span className={`transition-transform ${historyOpen ? 'rotate-90' : ''}`}>▶</span>
             {allInspections.length} INSPECTION{allInspections.length !== 1 ? 'S' : ''}
-            {recentEmojis && <span className="ml-1" title="Violation types from the past 12 months">{recentEmojis}</span>}
+            {recentViolations.length > 0 && (
+              <span className="flex items-center gap-0.5 ml-1">
+                <EmojiSet violations={recentViolations} />
+                <span title="Violation types from the past 12 months" className="font-mono text-xs text-zinc-400 dark:text-zinc-500 cursor-default leading-none">ⓘ</span>
+              </span>
+            )}
           </button>
 
           {historyOpen && (
