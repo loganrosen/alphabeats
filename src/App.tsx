@@ -55,8 +55,13 @@ export default function App() {
     fetchCommunityBoards().then(setCommunityBoards);
   }, []);
 
+  const hasQuery = (values: SearchParams) =>
+    values.name !== '' || values.address !== '' || values.zip !== '' ||
+    values.cuisine !== '' || values.cb !== '' ||
+    values.boro.length > 0 || values.grade.length > 0;
+
   const doSearch = useCallback(async (values: SearchParams) => {
-    if (!Object.values(values).some(Boolean)) return;
+    if (!hasQuery(values)) return;
     writeParams(values);
     setResult({ status: 'loading', restaurants: [], hitLimit: false, totalRows: 0, error: null });
     try {
@@ -69,7 +74,7 @@ export default function App() {
 
   useEffect(() => {
     const params = readParams();
-    if (Object.values(params).some(Boolean)) { setForm(params); doSearch(params); }
+    if (Object.values(params).some(v => Array.isArray(v) ? v.length > 0 : Boolean(v))) { setForm(params); doSearch(params); }
   }, [doSearch]);
 
   const handleClear = () => { setForm(EMPTY); writeParams(EMPTY); setResult(IDLE); };
