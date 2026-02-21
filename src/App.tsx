@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import SearchForm from './components/SearchForm.js';
 import ResultsGrid from './components/ResultsGrid.js';
 import { searchRestaurants, groupRows, fetchCuisines, fetchCommunityBoards, type SearchParams, type Restaurant, type CommunityBoard } from './api.js';
@@ -61,7 +61,7 @@ export default function App() {
     values.boro.length > 0 || values.grade.length > 0;
 
   const doSearch = useCallback(async (values: SearchParams) => {
-    if (!hasQuery(values)) return;
+    if (!hasQuery(values)) { setResult(IDLE); writeParams(values); return; }
     writeParams(values);
     setResult({ status: 'loading', restaurants: [], hitLimit: false, totalRows: 0, error: null });
     try {
@@ -72,12 +72,26 @@ export default function App() {
     }
   }, []);
 
+  // Debounce: fire search 500ms after form stops changing
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const handleFormChange = useCallback((fn: (prev: SearchParams) => SearchParams) => {
+    setForm(prev => {
+      const next = fn(prev);
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      debounceRef.current = setTimeout(() => doSearch(next), 500);
+      return next;
+    });
+  }, [doSearch]);
+
   useEffect(() => {
     const params = readParams();
     if (Object.values(params).some(v => Array.isArray(v) ? v.length > 0 : Boolean(v))) { setForm(params); doSearch(params); }
   }, [doSearch]);
 
-  const handleClear = () => { setForm(EMPTY); writeParams(EMPTY); setResult(IDLE); };
+  const handleClear = () => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    setForm(EMPTY); writeParams(EMPTY); setResult(IDLE);
+  };
 
   return (
     <div className="min-h-screen bg-zinc-50 text-zinc-900 font-sans dark:bg-zinc-950 dark:text-zinc-100">
@@ -116,7 +130,7 @@ export default function App() {
         </div>
       </header>
 
-      <SearchForm values={form} onChange={setForm} onSearch={() => doSearch(form)} onClear={handleClear} loading={result.status === 'loading'} cuisines={cuisines} communityBoards={communityBoards} />
+      <SearchForm values={form} onChange={handleFormChange} onSearch={() => doSearch(form)} onClear={handleClear} loading={result.status === 'loading'} cuisines={cuisines} communityBoards={communityBoards} />
       <ResultsGrid result={result} />
     </div>
   );
