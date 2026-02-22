@@ -5,6 +5,7 @@ import 'leaflet/dist/leaflet.css';
 import { fetchByCamis } from '../api.js';
 import type { Restaurant, Inspection, Violation } from '../api.js';
 import { norm, fmtDate } from '../utils.js';
+import GradeTimeline from '../components/GradeTimeline.js';
 
 // ── shared helpers (duplicated from RestaurantCard to keep pages self-contained)
 
@@ -58,11 +59,11 @@ function ViolationList({ violations }: { violations: Violation[] }) {
   );
 }
 
-function InspectionSection({ insp, isLatest }: { insp: Inspection; isLatest: boolean }) {
+function InspectionSection({ insp, isLatest, id }: { insp: Inspection; isLatest: boolean; id?: string }) {
   const grade = insp.grade ?? null;
   const critCount = insp.violations.filter(v => v.critical).length;
   return (
-    <div className={`rounded border p-4 flex flex-col gap-3 ${isLatest ? 'border-zinc-300 dark:border-zinc-600' : 'border-zinc-200 dark:border-zinc-800'}`}>
+    <div id={id} className={`rounded border p-4 flex flex-col gap-3 ${isLatest ? 'border-zinc-300 dark:border-zinc-600' : 'border-zinc-200 dark:border-zinc-800'}`}>
       <div className="flex items-center gap-3 flex-wrap">
         <span className={`font-display text-2xl w-8 text-center shrink-0 ${GRADE_TEXT[grade ?? ''] ?? 'text-zinc-400'}`}>
           {grade ? (GRADE_LABEL[grade] ?? grade) : '—'}
@@ -220,13 +221,18 @@ export default function RestaurantPage() {
               </div>
             )}
 
+            {/* Grade timeline */}
+            <GradeTimeline inspections={allInspections} onSelect={date => {
+              document.getElementById(`insp-${date}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }} />
+
             {/* Inspection history */}
             <h2 className="font-mono text-xs tracking-widest text-zinc-400 dark:text-zinc-500 uppercase mb-3">
               {allInspections.length} Inspection{allInspections.length !== 1 ? 's' : ''}
             </h2>
             <div className="flex flex-col gap-3">
               {allInspections.map((insp, i) => (
-                <InspectionSection key={i} insp={insp} isLatest={insp === restaurant.latest} />
+                <InspectionSection key={i} insp={insp} isLatest={insp === restaurant.latest} id={`insp-${insp.date}`} />
               ))}
             </div>
           </>
