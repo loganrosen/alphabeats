@@ -34,6 +34,8 @@ export interface Restaurant {
   street: string;
   zipcode: string;
   cuisine: string;
+  lat: number | null;
+  lng: number | null;
   inspections: Record<string, Inspection>;
   latest: Inspection | undefined;
 }
@@ -54,6 +56,8 @@ interface ApiRow {
   violation_code?: string;
   violation_description?: string;
   critical_flag?: string;
+  latitude?: string;
+  longitude?: string;
 }
 
 export interface CommunityBoard { code: string; label: string; borough: string; }
@@ -162,6 +166,8 @@ export function groupRows(rows: ApiRow[]): Restaurant[] {
         camis: r.camis, dba: r.dba, boro: r.boro,
         building: r.building, street: r.street, zipcode: r.zipcode,
         cuisine: r.cuisine_description,
+        lat: r.latitude ? parseFloat(r.latitude) : null,
+        lng: r.longitude ? parseFloat(r.longitude) : null,
         inspections: {},
         latest: undefined,
       };

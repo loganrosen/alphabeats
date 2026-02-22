@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { MapContainer, TileLayer, CircleMarker } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
 import { fetchByCamis } from '../api.js';
 import type { Restaurant, Inspection, Violation } from '../api.js';
 import { norm, fmtDate } from '../utils.js';
@@ -119,6 +121,7 @@ export default function RestaurantPage() {
   const grade = restaurant?.latest?.grade ?? null;
   const streetPart = restaurant ? [restaurant.building, norm(restaurant.street)].filter(Boolean).join(' ') : '';
   const addr = restaurant ? [streetPart, restaurant.zipcode, restaurant.boro].filter(Boolean).join(' · ') : '';
+  const mapsUrl = restaurant ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([restaurant.dba, streetPart, restaurant.zipcode, 'New York NY'].filter(Boolean).join(' '))}` : '';
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
@@ -148,7 +151,9 @@ export default function RestaurantPage() {
             <div className="flex justify-between items-start gap-4 mb-4">
               <div>
                 <h1 className="font-semibold text-2xl leading-snug text-zinc-900 dark:text-zinc-100">{restaurant.dba}</h1>
-                <p className="font-mono text-sm text-zinc-500 mt-1 dark:text-zinc-300">{addr}</p>
+                <p className="font-mono text-sm text-zinc-500 mt-1 dark:text-zinc-300">
+                  <a href={mapsUrl} target="_blank" rel="noopener noreferrer" className="hover:text-yellow-600 dark:hover:text-yellow-400 transition-colors">{addr}</a>
+                </p>
                 {restaurant.cuisine && (
                   <span className="font-mono text-xs text-zinc-600 tracking-wide uppercase border border-zinc-300 rounded px-2 py-0.5 mt-2 inline-block dark:text-zinc-300 dark:border-zinc-700">
                     {restaurant.cuisine}
@@ -168,13 +173,44 @@ export default function RestaurantPage() {
               }
             </div>
 
-            <a
-              href={`https://a816-health.nyc.gov/ABCEatsRestaurants/#!/Search/${restaurant.camis}`}
-              target="_blank" rel="noopener noreferrer"
-              className="font-mono text-xs text-yellow-600 hover:text-yellow-500 transition-colors dark:text-yellow-400 dark:hover:text-yellow-300 mb-8 inline-block"
-            >
-              View on NYC Health ↗
-            </a>
+            <div className="flex items-center gap-4 mb-6">
+              <a
+                href={`https://a816-health.nyc.gov/ABCEatsRestaurants/#!/Search/${restaurant.camis}`}
+                target="_blank" rel="noopener noreferrer"
+                className="font-mono text-xs text-yellow-600 hover:text-yellow-500 transition-colors dark:text-yellow-400 dark:hover:text-yellow-300"
+              >
+                View on NYC Health ↗
+              </a>
+              <a
+                href={mapsUrl}
+                target="_blank" rel="noopener noreferrer"
+                className="font-mono text-xs text-yellow-600 hover:text-yellow-500 transition-colors dark:text-yellow-400 dark:hover:text-yellow-300"
+              >
+                Google Maps ↗
+              </a>
+            </div>
+
+            {/* Mini map */}
+            {restaurant.lat && restaurant.lng && (
+              <div className="rounded overflow-hidden mb-8" style={{ height: 180 }}>
+                <MapContainer
+                  center={[restaurant.lat, restaurant.lng]}
+                  zoom={16}
+                  style={{ height: '100%', width: '100%' }}
+                  zoomControl={false}
+                  scrollWheelZoom={false}
+                  dragging={false}
+                  attributionControl={false}
+                >
+                  <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                  <CircleMarker
+                    center={[restaurant.lat, restaurant.lng]}
+                    radius={8}
+                    pathOptions={{ color: '#fff', weight: 2, fillColor: '#ca8a04', fillOpacity: 1 }}
+                  />
+                </MapContainer>
+              </div>
+            )}
 
             {/* Inspection history */}
             <h2 className="font-mono text-xs tracking-widest text-zinc-400 dark:text-zinc-500 uppercase mb-3">

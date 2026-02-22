@@ -137,6 +137,7 @@ export default function RestaurantCard({ restaurant: r }: { restaurant: Restaura
   const grade = insp?.grade ?? null;
   const streetPart = [r.building, norm(r.street)].filter(Boolean).join(' ');
   const addr = [streetPart, r.zipcode, r.boro].filter(Boolean).join(' · ');
+  const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([r.dba, streetPart, r.zipcode, 'New York NY'].filter(Boolean).join(' '))}`;
 
   const allInspections = Object.values(r.inspections)
     .sort((a, b) => new Date(b.date ?? '').getTime() - new Date(a.date ?? '').getTime());
@@ -154,7 +155,9 @@ export default function RestaurantCard({ restaurant: r }: { restaurant: Restaura
       <div className="flex justify-between items-start gap-4">
         <div>
           <Link to={`/restaurant/${r.camis}`} state={{ restaurant: r }} className="font-semibold text-lg leading-snug text-zinc-900 dark:text-zinc-100 hover:text-yellow-600 dark:hover:text-yellow-400 transition-colors">{r.dba}</Link>
-          <div className="font-mono text-sm text-zinc-500 mt-1 tracking-tight dark:text-zinc-300">{addr}</div>
+          <div className="font-mono text-sm text-zinc-500 mt-1 tracking-tight dark:text-zinc-300">
+            <a href={mapsUrl} target="_blank" rel="noopener noreferrer" className="hover:text-yellow-600 dark:hover:text-yellow-400 transition-colors">{addr}</a>
+          </div>
         </div>
         {neverInspected
           ? <div className="w-11 h-14 rounded shrink-0 flex flex-col items-center justify-center relative bg-zinc-100 dark:bg-zinc-800 text-zinc-400 dark:text-zinc-500 border border-zinc-200 dark:border-zinc-700">
