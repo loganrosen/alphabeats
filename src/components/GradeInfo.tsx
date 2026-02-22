@@ -1,8 +1,9 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 
 export default function GradeInfo({ align = 'center', direction = 'down' }: { align?: 'left' | 'center' | 'right', direction?: 'up' | 'down' }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const popoverRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -12,6 +13,15 @@ export default function GradeInfo({ align = 'center', direction = 'down' }: { al
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, [open]);
+
+  // Clamp popover within viewport after it renders
+  const clampToViewport = useCallback((el: HTMLDivElement | null) => {
+    popoverRef.current = el;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    if (rect.left < 8) el.style.transform = `translateX(${8 - rect.left}px)`;
+    else if (rect.right > window.innerWidth - 8) el.style.transform = `translateX(${window.innerWidth - 8 - rect.right}px)`;
+  }, []);
 
   const offset = direction === 'up' ? 'bottom-6' : 'top-6';
   const popoverPos =
@@ -37,7 +47,7 @@ export default function GradeInfo({ align = 'center', direction = 'down' }: { al
       </button>
 
       {open && (
-        <div className={`absolute ${popoverPos} z-50 w-64 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg shadow-lg p-3 text-left`}>
+        <div ref={clampToViewport} className={`absolute ${popoverPos} z-50 w-64 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg shadow-lg p-3 text-left`}>
           <div className={`absolute ${caretPos} ${caretEdge} w-3 h-3 bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700`} />
           <p className="font-mono text-[10px] tracking-widest uppercase text-zinc-400 dark:text-zinc-500 mb-2">NYC Restaurant Grades</p>
           <p className="text-xs text-zinc-600 dark:text-zinc-300 mb-3 leading-relaxed">

@@ -80,6 +80,7 @@ export default function RestaurantPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    window.scrollTo(0, 0);
     if (passedRestaurant) {
       document.title = `${passedRestaurant.dba} — alphabeats`;
       return () => { document.title = 'alphabeats — NYC Restaurant Inspection Search'; };
