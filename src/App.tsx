@@ -34,7 +34,7 @@ function writeParams(values: SearchParams): void {
     const s = Array.isArray(v) ? v.join(',') : v;
     s ? url.searchParams.set(k, s) : url.searchParams.delete(k);
   });
-  window.history.pushState({}, '', url);
+  window.history.replaceState({}, '', url);
 }
 
 const THEME_OPTIONS: { value: Theme; label: string }[] = [
