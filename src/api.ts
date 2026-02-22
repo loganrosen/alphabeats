@@ -24,6 +24,7 @@ export interface Inspection {
   grade: string | undefined;
   score: number | null;
   violations: Violation[];
+  closed: boolean;
 }
 
 export interface Restaurant {
@@ -58,6 +59,7 @@ interface ApiRow {
   critical_flag?: string;
   latitude?: string;
   longitude?: string;
+  action?: string;
 }
 
 export interface CommunityBoard { code: string; label: string; borough: string; }
@@ -187,6 +189,7 @@ export function groupRows(rows: ApiRow[]): Restaurant[] {
         grade: r.grade,
         score: r.score != null ? parseInt(r.score, 10) : null,
         violations: [],
+        closed: r.action?.toLowerCase().includes('closed') ?? false,
       };
     }
 

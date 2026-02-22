@@ -21,31 +21,14 @@ const GRADE_TEXT: Record<string, string> = {
   C: 'text-red-600 dark:text-red-400',
 };
 
-const VIOLATION_CATEGORIES: { emoji: string; label: string; test: (d: string) => boolean }[] = [
-  { emoji: '🐀', label: 'Rodents',          test: d => d.includes('mice') || d.includes('mouse') || d.includes('rodent') || d.includes('rat') || d.includes('droppings') },
-  { emoji: '🪳', label: 'Cockroaches',      test: d => d.includes('roach') || d.includes('cockroach') },
-  { emoji: '🪰', label: 'Insects / pests',  test: d => d.includes('fly') || d.includes('flies') || d.includes('insect') || d.includes('pest') },
-  { emoji: '🌡️', label: 'Temperature',     test: d => d.includes('temperature') || d.includes('cold') || d.includes('hot holding') || d.includes('thaw') || d.includes('refrigerat') },
-  { emoji: '🧼', label: 'Hand hygiene',     test: d => d.includes('hand wash') || d.includes('handwash') || d.includes('hand-wash') || d.includes('hygiene') || d.includes('bare hand') },
-  { emoji: '🚰', label: 'Plumbing',         test: d => d.includes('sewage') || d.includes('plumbing') || d.includes('drain') || d.includes('water supply') || d.includes('toilet') },
-  { emoji: '🧹', label: 'Sanitation',       test: d => d.includes('food contact') || d.includes('sanitiz') || d.includes('clean') || d.includes('wash') || d.includes('utensil') },
-  { emoji: '⚠️', label: 'Contamination',   test: d => d.includes('raw') || d.includes('cross-contam') || d.includes('contamina') },
-  { emoji: '🚬', label: 'Smoking',          test: d => d.includes('smoke') || d.includes('smoking') || d.includes('cigarette') },
-  { emoji: '🗑️', label: 'Waste / garbage', test: d => d.includes('garbage') || d.includes('waste') || d.includes('refuse') || d.includes('trash') },
-  { emoji: '📋', label: 'Permit / posting', test: d => d.includes('permit') || d.includes('license') || d.includes('sign') || d.includes('posted') || d.includes('notice') },
-];
-const DEFAULT_CATEGORY = { emoji: '📌', label: 'Other violation' };
-function violationCategory(desc: string) {
-  const d = desc.toLowerCase();
-  return VIOLATION_CATEGORIES.find(c => c.test(d)) ?? DEFAULT_CATEGORY;
-}
+import { violationCategory } from '../violationCategory.js';
 
 function ViolationList({ violations }: { violations: Violation[] }) {
   const sorted = [...violations].sort((a, b) => Number(b.critical) - Number(a.critical));
   return (
     <div className="flex flex-col gap-2 mt-1">
       {sorted.map((v, i) => {
-        const { emoji, label } = violationCategory(v.desc);
+        const { emoji, label } = violationCategory(v.code, v.desc);
         return (
           <div key={i} className={`text-sm pl-3 border-l-2 leading-relaxed ${v.critical ? 'border-red-500 text-zinc-800 dark:text-zinc-100' : 'border-zinc-300 text-zinc-600 dark:border-zinc-700 dark:text-zinc-300'}`}>
             <div className="font-mono text-xs text-yellow-600 mb-0.5 dark:text-yellow-400">
@@ -75,6 +58,7 @@ function InspectionSection({ insp, isLatest, id }: { insp: Inspection; isLatest:
         <div className="ml-auto flex items-center gap-3 shrink-0 flex-wrap">
           {insp.score != null && <span className="font-mono text-xs text-zinc-500 dark:text-zinc-400">{insp.score} pts</span>}
           {critCount > 0 && <span className="font-mono text-xs text-red-600 border border-red-300 rounded px-2 py-0.5 dark:text-red-300 dark:border-red-800">{critCount} critical</span>}
+          {insp.closed && <span className="font-mono text-xs text-orange-600 border border-orange-300 rounded px-2 py-0.5 dark:text-orange-300 dark:border-orange-800">closed by DOHMH</span>}
           {isLatest && <span className="font-mono text-xs text-yellow-600 border border-yellow-300 rounded px-2 py-0.5 dark:text-yellow-400 dark:border-yellow-700">Latest</span>}
         </div>
       </div>

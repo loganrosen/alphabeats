@@ -8,6 +8,7 @@ const GRADE_COLOR: Record<string, string> = {
 };
 // Z = grade pending (same as P in NYC system)
 const GRADE_DISPLAY: Record<string, string> = { Z: 'P' };
+const GRADE_TOOLTIP: Record<string, string> = { P: 'Pending', Z: 'Pending' };
 
 interface Props {
   inspections: Inspection[];
@@ -82,10 +83,23 @@ export default function GradeTimeline({ inspections, onSelect }: Props) {
 
   const hoveredInsp = hovered != null ? pts[hovered] : null;
 
-  // Tooltip: position above the marker, clamped to container
+  // Tooltip: position near the marker, clamped to container width
   function tooltipLeft(i: Inspection): string {
     const pct = (xOf(i) / W) * 100;
     return `${Math.min(Math.max(pct, 8), 82)}%`;
+  }
+  function tooltipTop(i: Inspection): number {
+    const cy = i.score != null ? yOf(i.score) : PAD_TOP + chartH / 2;
+    // Render below marker if in top 40% of chart, else above
+    const svgHeightPx = containerRef.current?.querySelector('svg')?.getBoundingClientRect().height ?? H;
+    const markerPct = cy / H;
+    return markerPct < 0.4
+      ? (cy / H) * svgHeightPx + MARKER_R + 6   // below
+      : (cy / H) * svgHeightPx - MARKER_R - 6;  // above (subtract tooltip height via transform)
+  }
+  function tooltipTransform(i: Inspection): string {
+    const cy = i.score != null ? yOf(i.score) : PAD_TOP + chartH / 2;
+    return cy / H < 0.4 ? 'translate(-50%, 0)' : 'translate(-50%, -100%)';
   }
 
   return (
@@ -186,6 +200,9 @@ export default function GradeTimeline({ inspections, onSelect }: Props) {
               <g key={i} onMouseEnter={() => setHovered(i)}
                 onClick={() => insp.date && onSelect?.(insp.date)}
                 style={{ cursor: 'pointer' }}>
+                {insp.closed && (
+                  <circle cx={cx} cy={cy} r={r + 3.5} fill="none" stroke="#ea580c" strokeWidth={1.5} opacity={0.8} />
+                )}
                 <circle cx={cx} cy={cy} r={r}
                   fill={color} opacity={isHov ? 1 : 0.85}
                   style={{ transition: 'r 0.1s' }} />
@@ -212,16 +229,17 @@ export default function GradeTimeline({ inspections, onSelect }: Props) {
         {hoveredInsp && (() => {
           const critCount = hoveredInsp.violations.filter(v => v.critical).length;
           return (
-            <div className="absolute -top-1 pointer-events-none z-10"
-              style={{ left: tooltipLeft(hoveredInsp), transform: 'translate(-50%, -100%)' }}>
+            <div className="absolute pointer-events-none z-10"
+              style={{ left: tooltipLeft(hoveredInsp), top: tooltipTop(hoveredInsp), transform: tooltipTransform(hoveredInsp) }}>
               <div className="bg-zinc-900 dark:bg-zinc-100 text-zinc-100 dark:text-zinc-900 rounded px-2.5 py-1.5 font-mono text-xs whitespace-nowrap shadow-lg">
                 <div className="font-semibold">{fmtDate(hoveredInsp.date)}</div>
                 {hoveredInsp.grade && (
                   <div style={{ color: GRADE_COLOR[hoveredInsp.grade] }}>
-                    Grade {GRADE_DISPLAY[hoveredInsp.grade] ?? hoveredInsp.grade}{hoveredInsp.score != null ? ` · ${hoveredInsp.score} pts` : ''}
+                    Grade {GRADE_TOOLTIP[hoveredInsp.grade] ?? GRADE_DISPLAY[hoveredInsp.grade] ?? hoveredInsp.grade}{hoveredInsp.score != null ? ` · ${hoveredInsp.score} pts` : ''}
                   </div>
                 )}
                 {critCount > 0 && <div className="text-red-400 dark:text-red-600">{critCount} critical violation{critCount !== 1 ? 's' : ''}</div>}
+                {hoveredInsp.closed && <div className="text-orange-400 dark:text-orange-500">Closed by DOHMH</div>}
                 {hoveredInsp.type && <div className="opacity-50 text-[10px] mt-0.5">{hoveredInsp.type}</div>}
               </div>
             </div>

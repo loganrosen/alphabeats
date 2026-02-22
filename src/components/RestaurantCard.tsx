@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { Restaurant, Inspection, Violation } from '../api.js';
 import { norm, fmtDate } from '../utils.js';
+import { violationCategory } from '../violationCategory.js';
 import GradeInfo from './GradeInfo.js';
 
 const GRADE_STYLES: Record<string, string> = {
@@ -20,34 +21,10 @@ const GRADE_TEXT: Record<string, string> = {
   C: 'text-red-600 dark:text-red-400',
 };
 
-const VIOLATION_CATEGORIES: { emoji: string; label: string; test: (d: string) => boolean }[] = [
-  { emoji: '🐀', label: 'Rodents',          test: d => d.includes('mice') || d.includes('mouse') || d.includes('rodent') || d.includes('rat') || d.includes('droppings') },
-  { emoji: '🪳', label: 'Cockroaches',      test: d => d.includes('roach') || d.includes('cockroach') },
-  { emoji: '🪰', label: 'Insects / pests',  test: d => d.includes('fly') || d.includes('flies') || d.includes('insect') || d.includes('pest') },
-  { emoji: '🌡️', label: 'Temperature',     test: d => d.includes('temperature') || d.includes('cold') || d.includes('hot holding') || d.includes('thaw') || d.includes('refrigerat') },
-  { emoji: '🧼', label: 'Hand hygiene',     test: d => d.includes('hand wash') || d.includes('handwash') || d.includes('hand-wash') || d.includes('hygiene') || d.includes('bare hand') },
-  { emoji: '🚰', label: 'Plumbing',         test: d => d.includes('sewage') || d.includes('plumbing') || d.includes('drain') || d.includes('water supply') || d.includes('toilet') },
-  { emoji: '🧹', label: 'Sanitation',       test: d => d.includes('food contact') || d.includes('sanitiz') || d.includes('clean') || d.includes('wash') || d.includes('utensil') },
-  { emoji: '⚠️', label: 'Contamination',   test: d => d.includes('raw') || d.includes('cross-contam') || d.includes('contamina') },
-  { emoji: '🚬', label: 'Smoking',          test: d => d.includes('smoke') || d.includes('smoking') || d.includes('cigarette') },
-  { emoji: '🗑️', label: 'Waste / garbage', test: d => d.includes('garbage') || d.includes('waste') || d.includes('refuse') || d.includes('trash') },
-  { emoji: '📋', label: 'Permit / posting', test: d => d.includes('permit') || d.includes('license') || d.includes('sign') || d.includes('posted') || d.includes('notice') },
-];
-const DEFAULT_CATEGORY = { emoji: '📌', label: 'Other violation' };
-
-function violationCategory(desc: string) {
-  const d = desc.toLowerCase();
-  return VIOLATION_CATEGORIES.find(c => c.test(d)) ?? DEFAULT_CATEGORY;
-}
-
-function violationEmoji(desc: string): string {
-  return violationCategory(desc).emoji;
-}
-
-function EmojiSet({ violations }: { violations: { desc: string }[] }) {
+function EmojiSet({ violations }: { violations: { code: string; desc: string }[] }) {
   const seen = new Map<string, string>();
   for (const v of violations) {
-    const { emoji, label } = violationCategory(v.desc);
+    const { emoji, label } = violationCategory(v.code, v.desc);
     if (!seen.has(emoji)) seen.set(emoji, label);
   }
   return (
