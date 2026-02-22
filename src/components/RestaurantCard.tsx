@@ -138,7 +138,7 @@ export default function RestaurantCard({ restaurant: r }: { restaurant: Restaura
   const streetPart = [r.building, norm(r.street)].filter(Boolean).join(' ');
   const addr = [streetPart, r.zipcode, r.boro].filter(Boolean).join(' · ');
   const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([r.dba, streetPart, r.zipcode, 'New York NY'].filter(Boolean).join(' '))}`;
-
+  const yelpUrl = `https://www.yelp.com/search?find_desc=${encodeURIComponent(r.dba)}&find_loc=${encodeURIComponent([streetPart, r.zipcode, 'New York NY'].filter(Boolean).join(', '))}`;
   const allInspections = Object.values(r.inspections)
     .sort((a, b) => new Date(b.date ?? '').getTime() - new Date(a.date ?? '').getTime());
 
@@ -208,13 +208,22 @@ export default function RestaurantCard({ restaurant: r }: { restaurant: Restaura
         <span className="font-mono text-xs text-zinc-400 dark:text-zinc-500">
           {neverInspected ? 'No inspection on record' : `Last inspected ${fmtDate(insp?.date)}`}
         </span>
-        <a
-          href={`https://a816-health.nyc.gov/ABCEatsRestaurants/#!/Search/${r.camis}`}
-          target="_blank" rel="noopener noreferrer"
-          className="font-mono text-xs text-yellow-600 hover:text-yellow-500 transition-colors dark:text-yellow-400 dark:hover:text-yellow-300"
-        >
-          NYC Health ↗
-        </a>
+        <div className="flex items-center gap-3">
+          <a
+            href={yelpUrl}
+            target="_blank" rel="noopener noreferrer"
+            className="font-mono text-xs text-yellow-600 hover:text-yellow-500 transition-colors dark:text-yellow-400 dark:hover:text-yellow-300"
+          >
+            Yelp ↗
+          </a>
+          <a
+            href={`https://a816-health.nyc.gov/ABCEatsRestaurants/#!/Search/${r.camis}`}
+            target="_blank" rel="noopener noreferrer"
+            className="font-mono text-xs text-yellow-600 hover:text-yellow-500 transition-colors dark:text-yellow-400 dark:hover:text-yellow-300"
+          >
+            NYC Health ↗
+          </a>
+        </div>
       </div>
     </div>
   );

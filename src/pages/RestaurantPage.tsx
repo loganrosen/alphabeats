@@ -122,6 +122,7 @@ export default function RestaurantPage() {
   const streetPart = restaurant ? [restaurant.building, norm(restaurant.street)].filter(Boolean).join(' ') : '';
   const addr = restaurant ? [streetPart, restaurant.zipcode, restaurant.boro].filter(Boolean).join(' · ') : '';
   const mapsUrl = restaurant ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([restaurant.dba, streetPart, restaurant.zipcode, 'New York NY'].filter(Boolean).join(' '))}` : '';
+  const yelpUrl = restaurant ? `https://www.yelp.com/search?find_desc=${encodeURIComponent(restaurant.dba)}&find_loc=${encodeURIComponent([streetPart, restaurant.zipcode, 'New York NY'].filter(Boolean).join(', '))}` : '';
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
@@ -187,6 +188,13 @@ export default function RestaurantPage() {
                 className="font-mono text-xs text-yellow-600 hover:text-yellow-500 transition-colors dark:text-yellow-400 dark:hover:text-yellow-300"
               >
                 Google Maps ↗
+              </a>
+              <a
+                href={yelpUrl}
+                target="_blank" rel="noopener noreferrer"
+                className="font-mono text-xs text-yellow-600 hover:text-yellow-500 transition-colors dark:text-yellow-400 dark:hover:text-yellow-300"
+              >
+                Yelp ↗
               </a>
             </div>
 
