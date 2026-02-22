@@ -46,7 +46,7 @@ const CODE_MAP: Record<string, ViolationCategory> = {
   // Rodents
   '04K': { emoji: '🐀', label: 'Rodents' },
   '04L': { emoji: '🐀', label: 'Rodents' },
-  '08A': { emoji: '🐀', label: 'Vermin / harborage' },
+  '08A': { emoji: '⚠️', label: 'Pest harborage conditions' },
 
   // Cockroaches
   '04M': { emoji: '🪳', label: 'Cockroaches' },
