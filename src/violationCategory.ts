@@ -1,113 +1,40 @@
 export interface ViolationCategory { emoji: string; label: string; }
 
-// Primary lookup: violation code → category.
+// Each entry: [emoji, label, ...codes]
 // Codes occasionally changed meaning over time; we map by the predominant current usage.
-const CODE_MAP: Record<string, ViolationCategory> = {
-  // Temperature / food safety
-  '02A': { emoji: '🌡️', label: 'Temperature' },
-  '02B': { emoji: '🌡️', label: 'Temperature' },
-  '02C': { emoji: '🌡️', label: 'Temperature' },
-  '02D': { emoji: '🌡️', label: 'Temperature' },
-  '02F': { emoji: '🌡️', label: 'Temperature' },
-  '02G': { emoji: '🌡️', label: 'Temperature' },
-  '02H': { emoji: '🌡️', label: 'Temperature' },
-  '02I': { emoji: '🌡️', label: 'Temperature' },
-  '05E': { emoji: '🌡️', label: 'Temperature' },
-  '05F': { emoji: '🌡️', label: 'Temperature' },
-  '10E': { emoji: '🌡️', label: 'Temperature' },
+const CATEGORIES: [string, string, ...string[]][] = [
+  ['🌡️', 'Temperature',             '02A','02B','02C','02D','02F','02G','02H','02I','05E','05F','10E'],
+  ['⚠️', 'Contamination',           '03A','03B','03C','03D','03F','03G','04E','04H','04I','04P','05B','06C','08C'],
+  ['⚠️', 'Pest harborage conditions','08A'],
+  ['🧼', 'Hand hygiene',             '04C','04D','05D','06A','09E','10J','10M'],
+  ['🐀', 'Rodents',                  '04K','04L'],
+  ['🪳', 'Cockroaches',              '04M'],
+  ['🪳', 'Cockroaches / flies',      '04N'],
+  ['🐾', 'Live animals',             '04O'],
+  ['🚰', 'Plumbing',                 '03E','05A','10A','10B'],
+  ['🧹', 'Sanitation',               '05C','05H','06D','06E','06F','09C','09D','10F','10G','10H','10I','10K'],
+  ['🗑️', 'Waste / garbage',          '08B'],
+  ['🚬', 'Smoking',                  '06B'],
+  ['📋', 'Permit / posting',         '03I','04A','04B','04F','04J','05I','06G','06H','06I','07A','09A','09B','10C','10D'],
+];
 
-  // Unapproved / contaminated food source
-  '03A': { emoji: '⚠️', label: 'Contamination' },
-  '03B': { emoji: '⚠️', label: 'Contamination' },
-  '03C': { emoji: '⚠️', label: 'Contamination' },
-  '03D': { emoji: '⚠️', label: 'Contamination' },
-  '03F': { emoji: '⚠️', label: 'Contamination' },
-  '03G': { emoji: '⚠️', label: 'Contamination' },
-  '03I': { emoji: '📋', label: 'Permit / posting' },
-  '04H': { emoji: '⚠️', label: 'Contamination' },
-  '04I': { emoji: '⚠️', label: 'Contamination' },
-  '04P': { emoji: '⚠️', label: 'Contamination' },
-  '06C': { emoji: '⚠️', label: 'Contamination' },
-  '05B': { emoji: '⚠️', label: 'Contamination' },
+const CODE_MAP: Record<string, ViolationCategory> = {};
+for (const [emoji, label, ...codes] of CATEGORIES) {
+  for (const code of codes) CODE_MAP[code] = { emoji, label };
+}
 
-  // Hand hygiene / personal cleanliness
-  '04C': { emoji: '🧼', label: 'Hand hygiene' },
-  '04D': { emoji: '🧼', label: 'Hand hygiene' },
-  '05D': { emoji: '🧼', label: 'Hand hygiene' },
-  '06A': { emoji: '🧼', label: 'Hand hygiene' },
-  '09E': { emoji: '🧼', label: 'Hand hygiene' },
-  '10J': { emoji: '🧼', label: 'Hand hygiene' },
-  '10M': { emoji: '🧼', label: 'Hand hygiene' },
-
-  // Toxic chemicals / pesticides
-  '04E': { emoji: '⚠️', label: 'Contamination' },
-  '08C': { emoji: '⚠️', label: 'Contamination' },
-
-  // Rodents
-  '04K': { emoji: '🐀', label: 'Rodents' },
-  '04L': { emoji: '🐀', label: 'Rodents' },
-  '08A': { emoji: '⚠️', label: 'Pest harborage conditions' },
-
-  // Cockroaches
-  '04M': { emoji: '🪳', label: 'Cockroaches' },
-  '04N': { emoji: '🪳', label: 'Cockroaches / flies' },
-
-  // Other live animals
-  '04O': { emoji: '🐾', label: 'Live animals' },
-
-  // Plumbing / water / sewage
-  '03E': { emoji: '🚰', label: 'Plumbing' },
-  '05A': { emoji: '🚰', label: 'Plumbing' },
-  '10A': { emoji: '🚰', label: 'Plumbing' },
-  '10B': { emoji: '🚰', label: 'Plumbing' },
-
-  // Sanitation / food contact surfaces
-  '05C': { emoji: '🧹', label: 'Sanitation' },
-  '05H': { emoji: '🧹', label: 'Sanitation' },
-  '06D': { emoji: '🧹', label: 'Sanitation' },
-  '06E': { emoji: '🧹', label: 'Sanitation' },
-  '06F': { emoji: '🧹', label: 'Sanitation' },
-  '09C': { emoji: '🧹', label: 'Sanitation' },
-  '09D': { emoji: '🧹', label: 'Sanitation' },
-  '10F': { emoji: '🧹', label: 'Sanitation' },
-  '10G': { emoji: '🧹', label: 'Sanitation' },
-  '10H': { emoji: '🧹', label: 'Sanitation' },
-  '10I': { emoji: '🧹', label: 'Sanitation' },
-  '10K': { emoji: '🧹', label: 'Sanitation' },
-
-  // Waste / garbage
-  '08B': { emoji: '🗑️', label: 'Waste / garbage' },
-
-  // Smoking / tobacco
-  '06B': { emoji: '🚬', label: 'Smoking' },
-
-  // Permit / posting / compliance
-  '04A': { emoji: '📋', label: 'Permit / posting' },
-  '04B': { emoji: '📋', label: 'Permit / posting' },
-  '04F': { emoji: '📋', label: 'Permit / posting' },
-  '04J': { emoji: '📋', label: 'Permit / posting' },
-  '05I': { emoji: '📋', label: 'Permit / posting' },
-  '06G': { emoji: '📋', label: 'Permit / posting' },
-  '06H': { emoji: '📋', label: 'Permit / posting' },
-  '06I': { emoji: '📋', label: 'Permit / posting' },
-  '07A': { emoji: '📋', label: 'Permit / posting' },
-  '09A': { emoji: '📋', label: 'Permit / posting' },
-  '09B': { emoji: '📋', label: 'Permit / posting' },
-  '10C': { emoji: '📋', label: 'Permit / posting' },
-  '10D': { emoji: '📋', label: 'Permit / posting' },
-};
-
-// Prefix map for smoking codes (15-xx, 15A1, 15E2, etc.)
-const SMOKING_PREFIXES = ['15-', '15A', '15E', '15F', '15I', '15K', '15L', '15S'];
-
-// Nutrition labeling codes (16-xx, 16A, 16B, 16C)
-const NUTRITION_PREFIXES = ['16-', '16A', '16B', '16C'];
+// Prefix-matched categories (15-xx smoking, 16-xx nutrition labeling)
+const PREFIX_CATEGORIES: [string[], ViolationCategory][] = [
+  [['15-','15A','15E','15F','15I','15K','15L','15S'], { emoji: '🚬', label: 'Smoking' }],
+  [['16-','16A','16B','16C'],                         { emoji: '📋', label: 'Nutrition labeling' }],
+];
 
 const DEFAULT: ViolationCategory = { emoji: '📌', label: 'Other violation' };
 
 export function violationCategory(code: string, _desc?: string): ViolationCategory {
   if (CODE_MAP[code]) return CODE_MAP[code];
-  if (SMOKING_PREFIXES.some(p => code.startsWith(p))) return { emoji: '🚬', label: 'Smoking' };
-  if (NUTRITION_PREFIXES.some(p => code.startsWith(p))) return { emoji: '📋', label: 'Nutrition labeling' };
+  for (const [prefixes, cat] of PREFIX_CATEGORIES) {
+    if (prefixes.some(p => code.startsWith(p))) return cat;
+  }
   return DEFAULT;
 }
