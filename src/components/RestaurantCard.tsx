@@ -60,11 +60,16 @@ function EmojiSet({ violations }: { violations: { desc: string }[] }) {
 function abbrevInspType(type: string | undefined): string {
   if (!type) return '';
   const part = type.split('/').pop()?.trim() ?? type;
-  if (part.toLowerCase().includes('re-inspection') || part.toLowerCase().includes('reinspection')) return 'Re-insp';
-  if (part.toLowerCase().includes('initial')) return 'Initial';
-  if (part.toLowerCase().includes('pre-permit')) return 'Pre-permit';
-  if (part.toLowerCase().includes('compliance')) return 'Compliance';
-  return part.length > 18 ? part.slice(0, 16) + '…' : part;
+  const p = part.toLowerCase();
+  if (p.includes('re-inspection') || p.includes('reinspection')) return 'Re-insp';
+  if (p.includes('initial')) return 'Initial';
+  if (p.includes('pre-permit')) return 'Pre-permit';
+  if (p.includes('compliance')) return 'Compliance';
+  if (p.includes('reopening')) return 'Reopening';
+  if (p.includes('smoke') || p.includes('calorie') || p.includes('trans fat')) return 'Special';
+  if (p.includes('admin')) return 'Admin';
+  if (p.includes('inspected')) return 'Inspected';
+  return part.length > 14 ? part.slice(0, 12) + '…' : part;
 }
 
 function ViolationList({ violations }: { violations: Violation[] }) {
@@ -89,23 +94,21 @@ function InspectionRow({ insp, isLatest }: { insp: Inspection; isLatest: boolean
   return (
     <div className={`rounded border ${isLatest ? 'border-zinc-300 dark:border-zinc-600' : 'border-zinc-200 dark:border-zinc-800'}`}>
       <div
-        className={`flex items-center gap-2 px-3 py-2 cursor-pointer select-none ${insp.violations.length > 0 ? 'hover:bg-zinc-50 dark:hover:bg-zinc-900' : ''}`}
+        className={`flex flex-wrap items-center gap-x-2 gap-y-1 px-3 py-2 cursor-pointer select-none ${insp.violations.length > 0 ? 'hover:bg-zinc-50 dark:hover:bg-zinc-900' : ''}`}
         onClick={() => insp.violations.length > 0 && setOpen(o => !o)}
       >
-        {/* Grade pill */}
+        {/* Left: grade + date + type + score */}
         <span className={`font-display text-base w-6 text-center shrink-0 ${GRADE_TEXT[grade ?? ''] ?? 'text-zinc-400'}`}>
           {grade ? (GRADE_LABEL[grade] ?? grade) : '—'}
         </span>
-
         <span className="font-mono text-xs text-zinc-500 dark:text-zinc-400 shrink-0">{fmtDate(insp.date)}</span>
-
         <span className="font-mono text-xs text-zinc-400 dark:text-zinc-500 shrink-0">{abbrevInspType(insp.type)}</span>
-
         {insp.score != null && (
           <span className="font-mono text-xs text-zinc-500 dark:text-zinc-400 shrink-0">· {insp.score}pts</span>
         )}
 
-        <span className="ml-auto flex items-center gap-1.5 shrink-0">
+        {/* Right: crit + emojis + arrow */}
+        <div className="ml-auto flex items-center gap-1.5 shrink-0">
           {critCount > 0 && <span className="font-mono text-xs text-red-500 dark:text-red-400">{critCount}✕ crit</span>}
           {insp.violations.length > 0 && (
             <>
@@ -113,7 +116,7 @@ function InspectionRow({ insp, isLatest }: { insp: Inspection; isLatest: boolean
               <span className={`font-mono text-xs text-zinc-400 transition-transform ${open ? 'rotate-90' : ''}`}>▶</span>
             </>
           )}
-        </span>
+        </div>
       </div>
 
       {open && insp.violations.length > 0 && (
