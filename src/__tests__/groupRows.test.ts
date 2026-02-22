@@ -59,7 +59,7 @@ describe('groupRows', () => {
   it('sets latestGraded to most recent inspection that has a grade', () => {
     const rows = [
       // Most recent — no grade yet (pending re-inspection)
-      row({ inspection_date: '2025-01-01T00:00:00.000', grade: undefined, score: '35', violation_code: '04K' }),
+      row({ inspection_date: '2025-01-01T00:00:00.000', grade: '', score: '35', violation_code: '04K' }),
       // Older — graded A
       row({ inspection_date: '2024-06-01T00:00:00.000', grade: 'A', score: '10' }),
     ];

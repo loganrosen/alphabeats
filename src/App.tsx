@@ -60,10 +60,14 @@ export default function App() {
     values.cuisine !== '' || values.cb !== '' ||
     values.boro.length > 0 || values.grade.length > 0;
 
+  const resultsRef = useRef<HTMLDivElement>(null);
+
   const doSearch = useCallback(async (values: SearchParams) => {
     if (!hasQuery(values)) { setResult(IDLE); writeParams(values); return; }
     writeParams(values);
     setResult({ status: 'loading', restaurants: [], hitLimit: false, totalRows: 0, error: null });
+    // On mobile, scroll past the search form to show results
+    setTimeout(() => resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 150);
     try {
       const rows = await searchRestaurants(values);
       const restaurants = groupRows(rows).filter(r =>
@@ -75,24 +79,12 @@ export default function App() {
     }
   }, []);
 
-  // Debounce: fire search 500ms after form stops changing
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const handleFormChange = useCallback((fn: (prev: SearchParams) => SearchParams) => {
-    setForm(prev => {
-      const next = fn(prev);
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-      debounceRef.current = setTimeout(() => doSearch(next), 500);
-      return next;
-    });
-  }, [doSearch]);
-
   useEffect(() => {
     const params = readParams();
     if (Object.values(params).some(v => Array.isArray(v) ? v.length > 0 : Boolean(v))) { setForm(params); doSearch(params); }
   }, [doSearch]);
 
   const handleClear = () => {
-    if (debounceRef.current) clearTimeout(debounceRef.current);
     setForm(EMPTY); writeParams(EMPTY); setResult(IDLE);
   };
 
@@ -133,8 +125,10 @@ export default function App() {
         </div>
       </header>
 
-      <SearchForm values={form} onChange={handleFormChange} onSearch={() => doSearch(form)} onClear={handleClear} loading={result.status === 'loading'} cuisines={cuisines} communityBoards={communityBoards} />
-      <ResultsGrid result={result} />
+      <SearchForm values={form} onChange={setForm} onSearch={() => doSearch(form)} onClear={handleClear} loading={result.status === 'loading'} cuisines={cuisines} communityBoards={communityBoards} />
+      <div ref={resultsRef} className="scroll-mt-14">
+        <ResultsGrid result={result} />
+      </div>
     </div>
   );
 }
