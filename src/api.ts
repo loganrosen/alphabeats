@@ -129,7 +129,19 @@ export async function searchRestaurants(params: SearchParams): Promise<ApiRow[]>
   return res.json();
 }
 
-// The API returns one row per violation. Group into one object per restaurant
+export async function fetchByCamis(camis: string): Promise<Restaurant | null> {
+  const query = new URLSearchParams({
+    '$where': `camis='${camis.replace(/'/g, "''")}'`,
+    '$order': 'inspection_date DESC',
+    '$limit': '1000',
+  });
+  const res = await fetch(`${API}?${query}`);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const rows: ApiRow[] = await res.json();
+  if (!rows.length) return null;
+  return groupRows(rows)[0] ?? null;
+}
+
 // (by camis), keeping all inspections with their violations.
 export function groupRows(rows: ApiRow[]): Restaurant[] {
   const map: Record<string, Restaurant> = {};
