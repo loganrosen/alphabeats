@@ -103,7 +103,7 @@ export default function RestaurantPage() {
       )
     : [];
 
-  const grade = restaurant?.latest?.grade ?? null;
+  const grade = restaurant?.latestGraded?.grade ?? null;
   const streetPart = restaurant ? [restaurant.building, norm(restaurant.street)].filter(Boolean).join(' ') : '';
   const addr = restaurant ? [streetPart, restaurant.zipcode, restaurant.boro].filter(Boolean).join(' · ') : '';
   const mapsUrl = restaurant ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([restaurant.dba, streetPart, restaurant.zipcode, 'New York NY'].filter(Boolean).join(' '))}` : '';

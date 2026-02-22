@@ -114,8 +114,9 @@ export default function RestaurantCard({ restaurant: r }: { restaurant: Restaura
   const [historyOpen, setHistoryOpen] = useState(false);
 
   const insp = r.latest;
+  const gradedInsp = r.latestGraded;
   const neverInspected = !insp;
-  const grade = insp?.grade ?? null;
+  const grade = gradedInsp?.grade ?? null;
   const streetPart = [r.building, norm(r.street)].filter(Boolean).join(' ');
   const addr = [streetPart, r.zipcode, r.boro].filter(Boolean).join(' · ');
   const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([r.dba, streetPart, r.zipcode, 'New York NY'].filter(Boolean).join(' '))}`;

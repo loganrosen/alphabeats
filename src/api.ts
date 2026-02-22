@@ -39,6 +39,7 @@ export interface Restaurant {
   lng: number | null;
   inspections: Record<string, Inspection>;
   latest: Inspection | undefined;
+  latestGraded: Inspection | undefined;
 }
 
 // Raw row shape returned by the NYC Open Data API.
@@ -172,6 +173,7 @@ export function groupRows(rows: ApiRow[]): Restaurant[] {
         lng: r.longitude ? parseFloat(r.longitude) : null,
         inspections: {},
         latest: undefined,
+        latestGraded: undefined,
       };
     }
 
@@ -209,12 +211,13 @@ export function groupRows(rows: ApiRow[]): Restaurant[] {
       const sorted = Object.values(rest.inspections).sort(
         (a, b) => new Date(b.date ?? '').getTime() - new Date(a.date ?? '').getTime()
       );
-      rest.latest = sorted.find(i => i.grade) ?? sorted[0];
+      rest.latest = sorted[0];
+      rest.latestGraded = sorted.find(i => i.grade) ?? sorted[0];
       return rest;
     })
     .sort((a, b) => {
-      const ga = gradeOrder[a.latest?.grade ?? ''] ?? 3;
-      const gb = gradeOrder[b.latest?.grade ?? ''] ?? 3;
+      const ga = gradeOrder[a.latestGraded?.grade ?? ''] ?? 3;
+      const gb = gradeOrder[b.latestGraded?.grade ?? ''] ?? 3;
       if (ga !== gb) return ga - gb;
       return a.dba.localeCompare(b.dba);
     });
