@@ -59,23 +59,33 @@ interface ApiRow {
 export interface CommunityBoard { code: string; label: string; borough: string; }
 
 export async function fetchCommunityBoards(): Promise<CommunityBoard[]> {
+  const CACHE_KEY = 'alphabeats:community_boards';
+  const cached = sessionStorage.getItem(CACHE_KEY);
+  if (cached) return JSON.parse(cached);
   const url = 'https://data.cityofnewyork.us/resource/ruf7-3wgc.json'
     + '?$select=community_board_1,neighborhoods,borough&$limit=200&$order=borough,community_board_1';
   const res = await fetch(url);
   if (!res.ok) return [];
   const rows: { community_board_1?: string; neighborhoods?: string; borough?: string }[] = await res.json();
-  return rows
+  const result = rows
     .filter(r => r.community_board_1 && r.neighborhoods)
     .map(r => ({ code: r.community_board_1!, label: r.neighborhoods!, borough: r.borough ?? '' }));
+  sessionStorage.setItem(CACHE_KEY, JSON.stringify(result));
+  return result;
 }
 
 export async function fetchCuisines(): Promise<string[]> {
+  const CACHE_KEY = 'alphabeats:cuisines';
+  const cached = sessionStorage.getItem(CACHE_KEY);
+  if (cached) return JSON.parse(cached);
   const url = 'https://data.cityofnewyork.us/resource/43nn-pn8j.json'
     + '?$select=cuisine_description&$group=cuisine_description&$order=cuisine_description&$limit=500';
   const res = await fetch(url);
   if (!res.ok) return [];
   const rows: { cuisine_description?: string }[] = await res.json();
-  return rows.map(r => r.cuisine_description ?? '').filter(Boolean);
+  const result = rows.map(r => r.cuisine_description ?? '').filter(Boolean);
+  sessionStorage.setItem(CACHE_KEY, JSON.stringify(result));
+  return result;
 }
 
 export async function searchRestaurants(params: SearchParams): Promise<ApiRow[]> {

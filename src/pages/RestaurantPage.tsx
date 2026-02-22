@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { fetchByCamis } from '../api.js';
 import type { Restaurant, Inspection, Violation } from '../api.js';
 import { norm, fmtDate } from '../utils.js';
@@ -85,12 +85,18 @@ function InspectionSection({ insp, isLatest }: { insp: Inspection; isLatest: boo
 
 export default function RestaurantPage() {
   const { camis } = useParams<{ camis: string }>();
-  const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(true);
+  const location = useLocation();
+  const passedRestaurant = (location.state as { restaurant?: Restaurant } | null)?.restaurant ?? null;
+  const [restaurant, setRestaurant] = useState<Restaurant | null>(passedRestaurant);
+  const [loading, setLoading] = useState(!passedRestaurant);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (passedRestaurant) {
+      document.title = `${passedRestaurant.dba} — alphabeats`;
+      return () => { document.title = 'alphabeats — NYC Restaurant Inspection Search'; };
+    }
     if (!camis) return;
     setLoading(true);
     setError(null);
@@ -102,7 +108,7 @@ export default function RestaurantPage() {
       .catch(e => setError(String(e)))
       .finally(() => setLoading(false));
     return () => { document.title = 'alphabeats — NYC Restaurant Inspection Search'; };
-  }, [camis]);
+  }, [camis]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const allInspections = restaurant
     ? Object.values(restaurant.inspections).sort(

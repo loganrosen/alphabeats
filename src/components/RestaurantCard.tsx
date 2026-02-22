@@ -153,7 +153,7 @@ export default function RestaurantCard({ restaurant: r }: { restaurant: Restaura
     <div className="bg-white hover:bg-zinc-50 transition-colors p-5 flex flex-col gap-3 dark:bg-zinc-950 dark:hover:bg-zinc-900">
       <div className="flex justify-between items-start gap-4">
         <div>
-          <Link to={`/restaurant/${r.camis}`} className="font-semibold text-lg leading-snug text-zinc-900 dark:text-zinc-100 hover:text-yellow-600 dark:hover:text-yellow-400 transition-colors">{r.dba}</Link>
+          <Link to={`/restaurant/${r.camis}`} state={{ restaurant: r }} className="font-semibold text-lg leading-snug text-zinc-900 dark:text-zinc-100 hover:text-yellow-600 dark:hover:text-yellow-400 transition-colors">{r.dba}</Link>
           <div className="font-mono text-sm text-zinc-500 mt-1 tracking-tight dark:text-zinc-300">{addr}</div>
         </div>
         {neverInspected
