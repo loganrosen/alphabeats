@@ -152,7 +152,7 @@ export default function RestaurantCard({ restaurant: r }: { restaurant: Restaura
     .flatMap(i => i.violations);
 
   return (
-    <div className="bg-white hover:bg-zinc-50 transition-colors p-5 flex flex-col gap-3 dark:bg-zinc-950 dark:hover:bg-zinc-900 group">
+    <div className="bg-white hover:bg-zinc-50 transition-colors p-5 flex flex-col gap-3 min-w-0 dark:bg-zinc-950 dark:hover:bg-zinc-900 group">
       <div className="flex justify-between items-start gap-4">
         <div>
           <Link data-restaurant-link to={`/restaurant/${r.camis}`} state={{ restaurant: r }} className="font-semibold text-lg leading-snug text-zinc-900 dark:text-zinc-100 hover:text-yellow-600 dark:hover:text-yellow-400 transition-colors group-hover:text-yellow-600 dark:group-hover:text-yellow-400">
@@ -167,21 +167,23 @@ export default function RestaurantCard({ restaurant: r }: { restaurant: Restaura
           ? <div className="w-11 h-14 rounded shrink-0 flex flex-col items-center justify-center relative bg-zinc-100 dark:bg-zinc-800 text-zinc-400 dark:text-zinc-500 border border-zinc-200 dark:border-zinc-700">
               <span className="font-mono text-xs text-center leading-tight tracking-tight px-0.5">NOT YET</span>
             </div>
-          : <div className="flex flex-col items-end gap-1 shrink-0">
-              <div className={`${GRADE_STYLES[grade ?? ''] ?? 'bg-zinc-400 dark:bg-zinc-700'} w-11 h-14 rounded flex flex-col items-center justify-center relative text-white`}>
-                <span className="font-display text-3xl leading-none">{GRADE_LABEL[grade ?? ''] ?? grade ?? '?'}</span>
-                <span className="font-mono text-[0.45rem] tracking-widest absolute bottom-1.5 opacity-75">
-                  {grade === 'Z' || grade === 'P' ? 'PENDING' : grade === 'N' ? 'UNGRADED' : 'GRADE'}
-                </span>
-              </div>
-              <GradeInfo align="left" />
+          : <div className={`${GRADE_STYLES[grade ?? ''] ?? 'bg-zinc-400 dark:bg-zinc-700'} w-11 h-14 rounded shrink-0 flex flex-col items-center justify-center relative text-white`}>
+              <span className="font-display text-3xl leading-none">{GRADE_LABEL[grade ?? ''] ?? grade ?? '?'}</span>
+              <span className="font-mono text-[0.45rem] tracking-widest absolute bottom-1.5 opacity-75">
+                {grade === 'Z' || grade === 'P' ? 'PENDING' : grade === 'N' ? 'UNGRADED' : 'GRADE'}
+              </span>
             </div>
         }
       </div>
 
+      {r.cuisine && (
+        <div>
+          <span className="font-mono text-xs text-zinc-600 tracking-wide uppercase border border-zinc-300 rounded px-2 py-0.5 dark:text-zinc-300 dark:border-zinc-700">{r.cuisine}</span>
+        </div>
+      )}
       <div className="flex gap-1.5 flex-wrap items-center">
-        {r.cuisine && <span className="font-mono text-xs text-zinc-600 tracking-wide uppercase border border-zinc-300 rounded px-2 py-0.5 dark:text-zinc-300 dark:border-zinc-700">{r.cuisine}</span>}
         {insp?.score != null && <span className="font-mono text-xs text-zinc-700 tracking-wide border border-zinc-300 rounded px-2 py-0.5 dark:text-zinc-100 dark:border-zinc-700">Score {insp.score}</span>}
+        {(insp?.score != null || grade) && <GradeInfo align="left" direction="up" />}
         {latestCritCount > 0 && <span className="font-mono text-xs text-red-600 border border-red-300 rounded px-2 py-0.5 dark:text-red-300 dark:border-red-800">{latestCritCount} critical</span>}
       </div>
 
@@ -196,7 +198,7 @@ export default function RestaurantCard({ restaurant: r }: { restaurant: Restaura
             {recentViolations.length > 0 && (
               <span className="flex items-center gap-0.5 ml-1">
                 <EmojiSet violations={recentViolations} />
-                <span title="Violation types from the past 12 months" className="font-mono text-xs text-zinc-400 dark:text-zinc-500 cursor-default leading-none">ⓘ</span>
+                <span className="font-mono text-xs text-zinc-400 dark:text-zinc-500 ml-0.5">12mo</span>
               </span>
             )}
           </button>
@@ -211,7 +213,7 @@ export default function RestaurantCard({ restaurant: r }: { restaurant: Restaura
         </>
       )}
 
-      <div className="flex justify-between items-center pt-2 border-t border-zinc-200 mt-auto dark:border-zinc-800">
+      <div className="flex flex-wrap justify-between items-center gap-2 pt-2 border-t border-zinc-200 mt-auto dark:border-zinc-800">
         <span className="font-mono text-xs text-zinc-400 dark:text-zinc-500">
           {neverInspected ? 'No inspection on record' : `Last inspected ${fmtDate(insp?.date)}`}
         </span>

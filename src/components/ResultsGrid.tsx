@@ -69,7 +69,7 @@ export default function ResultsGrid({ result }: { result: SearchResult }) {
             NO RESULTS — TRY BROADER TERMS
           </div>
         : view === 'list'
-          ? <div className="grid [grid-template-columns:repeat(auto-fill,minmax(340px,1fr))] gap-px bg-zinc-200 dark:bg-zinc-800">
+          ? <div className="grid [grid-template-columns:repeat(auto-fill,minmax(min(340px,100%),1fr))] gap-px bg-zinc-200 dark:bg-zinc-800">
               {restaurants.map(r => <RestaurantCard key={r.camis} restaurant={r} />)}
             </div>
           : (

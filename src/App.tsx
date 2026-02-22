@@ -94,7 +94,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-50 text-zinc-900 font-sans dark:bg-zinc-950 dark:text-zinc-100">
+    <div className="min-h-screen overflow-x-hidden bg-zinc-50 text-zinc-900 font-sans dark:bg-zinc-950 dark:text-zinc-100">
       <header className="sticky top-0 z-10 bg-white border-b border-zinc-200 px-4 sm:px-8 py-3 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 dark:bg-zinc-950 dark:border-zinc-800">
         <div className="flex items-baseline gap-2 min-w-0">
           <span className="font-sans font-bold text-3xl sm:text-4xl tracking-wide leading-none shrink-0"><span className="text-zinc-800 dark:text-zinc-100">alphab</span><span className="text-yellow-500 dark:text-yellow-400">eats</span></span>

@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 
-export default function GradeInfo({ align = 'center' }: { align?: 'left' | 'center' | 'right' }) {
+export default function GradeInfo({ align = 'center', direction = 'down' }: { align?: 'left' | 'center' | 'right', direction?: 'up' | 'down' }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -13,14 +13,18 @@ export default function GradeInfo({ align = 'center' }: { align?: 'left' | 'cent
     return () => document.removeEventListener('mousedown', handler);
   }, [open]);
 
+  const offset = direction === 'up' ? 'bottom-6' : 'top-6';
   const popoverPos =
-    align === 'left'   ? 'right-0 top-6' :
-    align === 'right'  ? 'left-0 top-6' :
-                         'left-1/2 -translate-x-1/2 top-6';
+    align === 'left'   ? `right-0 ${offset}` :
+    align === 'right'  ? `left-0 ${offset}` :
+                         `left-1/2 -translate-x-1/2 ${offset}`;
   const caretPos =
     align === 'left'   ? 'right-1' :
     align === 'right'  ? 'left-1' :
                          'left-1/2 -translate-x-1/2';
+  const caretEdge = direction === 'up'
+    ? '-bottom-1.5 border-r border-b rotate-45'
+    : '-top-1.5 border-l border-t rotate-45';
 
   return (
     <div ref={ref} className="relative inline-flex items-center">
@@ -34,10 +38,10 @@ export default function GradeInfo({ align = 'center' }: { align?: 'left' | 'cent
 
       {open && (
         <div className={`absolute ${popoverPos} z-50 w-64 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg shadow-lg p-3 text-left`}>
-          <div className={`absolute -top-1.5 ${caretPos} w-3 h-3 bg-white dark:bg-zinc-900 border-l border-t border-zinc-200 dark:border-zinc-700 rotate-45`} />
+          <div className={`absolute ${caretPos} ${caretEdge} w-3 h-3 bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700`} />
           <p className="font-mono text-[10px] tracking-widest uppercase text-zinc-400 dark:text-zinc-500 mb-2">NYC Restaurant Grades</p>
           <p className="text-xs text-zinc-600 dark:text-zinc-300 mb-3 leading-relaxed">
-            Inspectors assign <span className="font-semibold text-zinc-800 dark:text-zinc-100">violation points</span> based on what they find. Lower is better.
+            Inspectors assign <span className="font-semibold text-zinc-800 dark:text-zinc-100">violation points</span> based on what they find. Lower is better. <span className="font-semibold text-zinc-800 dark:text-zinc-100">Critical violations</span> carry more points.
           </p>
           <div className="flex flex-col gap-1.5 mb-3">
             {[
