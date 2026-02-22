@@ -125,11 +125,6 @@ export async function searchRestaurants(params: SearchParams): Promise<ApiRow[]>
       conditions.push(`(${parts.join(' OR ')})`);
     }
   }
-  if (params.grade.length === 1) {
-    conditions.push(`grade='${params.grade[0]}'`);
-  } else if (params.grade.length > 1) {
-    conditions.push(`(${params.grade.map(g => `grade='${g}'`).join(' OR ')})`);
-  }
   if (params.cb)    conditions.push(`community_board='${params.cb.replace(/'/g, "''")}'`);
   if (params.address) {
     // Each token is matched independently so abbreviations and spacing quirks

@@ -66,7 +66,10 @@ export default function App() {
     setResult({ status: 'loading', restaurants: [], hitLimit: false, totalRows: 0, error: null });
     try {
       const rows = await searchRestaurants(values);
-      setResult({ status: 'done', restaurants: groupRows(rows), hitLimit: rows.length >= 5000, totalRows: rows.length, error: null });
+      const restaurants = groupRows(rows).filter(r =>
+        values.grade.length === 0 || values.grade.includes(r.latestGraded?.grade ?? '')
+      );
+      setResult({ status: 'done', restaurants, hitLimit: rows.length >= 5000, totalRows: rows.length, error: null });
     } catch (e) {
       setResult({ status: 'error', restaurants: [], hitLimit: false, totalRows: 0, error: (e as Error).message });
     }
