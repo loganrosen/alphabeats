@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { Restaurant, Inspection, Violation } from '../api.js';
 import { norm, fmtDate } from '../utils.js';
+import GradeInfo from './GradeInfo.js';
 
 const GRADE_STYLES: Record<string, string> = {
   A: 'bg-green-700',
@@ -166,11 +167,14 @@ export default function RestaurantCard({ restaurant: r }: { restaurant: Restaura
           ? <div className="w-11 h-14 rounded shrink-0 flex flex-col items-center justify-center relative bg-zinc-100 dark:bg-zinc-800 text-zinc-400 dark:text-zinc-500 border border-zinc-200 dark:border-zinc-700">
               <span className="font-mono text-xs text-center leading-tight tracking-tight px-0.5">NOT YET</span>
             </div>
-          : <div className={`${GRADE_STYLES[grade ?? ''] ?? 'bg-zinc-400 dark:bg-zinc-700'} w-11 h-14 rounded shrink-0 flex flex-col items-center justify-center relative text-white`}>
-              <span className="font-display text-3xl leading-none">{GRADE_LABEL[grade ?? ''] ?? grade ?? '?'}</span>
-              <span className="font-mono text-[0.45rem] tracking-widest absolute bottom-1.5 opacity-75">
-                {grade === 'Z' || grade === 'P' ? 'PENDING' : grade === 'N' ? 'UNGRADED' : 'GRADE'}
-              </span>
+          : <div className="flex flex-col items-end gap-1 shrink-0">
+              <div className={`${GRADE_STYLES[grade ?? ''] ?? 'bg-zinc-400 dark:bg-zinc-700'} w-11 h-14 rounded flex flex-col items-center justify-center relative text-white`}>
+                <span className="font-display text-3xl leading-none">{GRADE_LABEL[grade ?? ''] ?? grade ?? '?'}</span>
+                <span className="font-mono text-[0.45rem] tracking-widest absolute bottom-1.5 opacity-75">
+                  {grade === 'Z' || grade === 'P' ? 'PENDING' : grade === 'N' ? 'UNGRADED' : 'GRADE'}
+                </span>
+              </div>
+              <GradeInfo align="left" />
             </div>
         }
       </div>

@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import type { Inspection } from '../api.js';
 import { fmtDate } from '../utils.js';
+import GradeInfo from './GradeInfo.js';
 
 const GRADE_COLOR: Record<string, string> = {
   A: '#15803d', B: '#d97706', C: '#dc2626',
@@ -89,9 +90,10 @@ export default function GradeTimeline({ inspections, onSelect }: Props) {
 
   return (
     <div className="mb-8">
-      <h2 className="font-mono text-xs tracking-widest text-zinc-400 dark:text-zinc-500 uppercase mb-3">
-        Grade history
-        <span className="normal-case tracking-normal text-zinc-400 dark:text-zinc-600 ml-2 font-normal">· lower violation points = better</span>
+      <h2 className="font-mono text-xs tracking-widest text-zinc-400 dark:text-zinc-500 uppercase mb-3 flex items-center gap-2">
+        <span>Grade history</span>
+        <GradeInfo />
+        <span className="normal-case tracking-normal text-zinc-400 dark:text-zinc-600 font-normal">· lower violation points = better</span>
       </h2>
       <div ref={containerRef} className="rounded border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 overflow-visible relative">
         <svg
