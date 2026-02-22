@@ -25,6 +25,7 @@ export interface Inspection {
   score: number | null;
   violations: Violation[];
   closed: boolean;
+  reinspection: boolean;
 }
 
 export interface Restaurant {
@@ -34,6 +35,7 @@ export interface Restaurant {
   building: string;
   street: string;
   zipcode: string;
+  phone: string;
   cuisine: string;
   lat: number | null;
   lng: number | null;
@@ -61,6 +63,8 @@ interface ApiRow {
   latitude?: string;
   longitude?: string;
   action?: string;
+  phone?: string;
+  grade_date?: string;
 }
 
 export interface CommunityBoard { code: string; label: string; borough: string; }
@@ -168,6 +172,7 @@ export function groupRows(rows: ApiRow[]): Restaurant[] {
       map[r.camis] = {
         camis: r.camis, dba: r.dba, boro: r.boro,
         building: r.building, street: r.street, zipcode: r.zipcode,
+        phone: r.phone ?? '',
         cuisine: r.cuisine_description,
         lat: r.latitude ? parseFloat(r.latitude) : null,
         lng: r.longitude ? parseFloat(r.longitude) : null,
@@ -192,6 +197,7 @@ export function groupRows(rows: ApiRow[]): Restaurant[] {
         score: r.score != null ? parseInt(r.score, 10) : null,
         violations: [],
         closed: r.action?.toLowerCase().includes('closed') ?? false,
+        reinspection: r.inspection_type?.toLowerCase().includes('re-inspection') ?? false,
       };
     }
 

@@ -159,7 +159,7 @@ export default function RestaurantPage() {
               }
             </div>
 
-            <div className="flex items-center gap-4 mb-6">
+            <div className="flex items-center gap-4 mb-6 flex-wrap">
               <a
                 href={`https://a816-health.nyc.gov/ABCEatsRestaurants/#!/Search/${restaurant.camis}`}
                 target="_blank" rel="noopener noreferrer"
@@ -181,6 +181,14 @@ export default function RestaurantPage() {
               >
                 Yelp ↗
               </a>
+              {restaurant.phone && (
+                <a
+                  href={`tel:${restaurant.phone}`}
+                  className="font-mono text-xs text-yellow-600 hover:text-yellow-500 transition-colors dark:text-yellow-400 dark:hover:text-yellow-300"
+                >
+                  📞 {restaurant.phone.replace(/(\d{3})(\d{3})(\d{4})/, '($1) $2-$3')}
+                </a>
+              )}
             </div>
 
             {/* Mini map */}

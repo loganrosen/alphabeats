@@ -126,6 +126,17 @@ export default function RestaurantCard({ restaurant: r }: { restaurant: Restaura
 
   const latestCritCount = (insp?.violations ?? []).filter(v => v.critical).length;
 
+  // Score trend: compare latest scored inspection to the one before it
+  // Lower score = fewer violation points = better
+  const scoredInspections = allInspections.filter(i => i.score != null && i.grade);
+  const trendArrow = (() => {
+    if (scoredInspections.length < 2) return null;
+    const diff = scoredInspections[0].score! - scoredInspections[1].score!;
+    if (diff < -1) return { arrow: '↓', title: 'Violation points improving', cls: 'text-green-600 dark:text-green-400' };
+    if (diff > 1)  return { arrow: '↑', title: 'Violation points worsening', cls: 'text-red-500 dark:text-red-400' };
+    return { arrow: '→', title: 'Violation points stable', cls: 'text-zinc-400 dark:text-zinc-500' };
+  })();
+
   const oneYearAgo = new Date();
   oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
   const recentViolations = allInspections
@@ -140,8 +151,9 @@ export default function RestaurantCard({ restaurant: r }: { restaurant: Restaura
             {r.dba}
             <span className="ml-1.5 text-zinc-400 dark:text-zinc-500 group-hover:text-yellow-500 dark:group-hover:text-yellow-400 transition-colors text-base font-normal">→</span>
           </Link>
-          <div className="font-mono text-sm text-zinc-500 mt-1 tracking-tight dark:text-zinc-300">
+          <div className="font-mono text-sm text-zinc-500 mt-1 tracking-tight dark:text-zinc-300 flex items-center gap-2 flex-wrap">
             <a href={mapsUrl} target="_blank" rel="noopener noreferrer" className="hover:text-yellow-600 dark:hover:text-yellow-400 transition-colors">{addr}</a>
+            {r.phone && <a href={`tel:${r.phone}`} className="hover:text-yellow-600 dark:hover:text-yellow-400 transition-colors opacity-60 hover:opacity-100">📞</a>}
           </div>
         </div>
         {neverInspected
@@ -163,7 +175,8 @@ export default function RestaurantCard({ restaurant: r }: { restaurant: Restaura
         </div>
       )}
       <div className="flex gap-1.5 flex-wrap items-center">
-        {insp?.score != null && <span className="font-mono text-xs text-zinc-700 tracking-wide border border-zinc-300 rounded px-2 py-0.5 dark:text-zinc-100 dark:border-zinc-700">Score {insp.score}</span>}
+        {insp?.score != null && <span className="font-mono text-xs text-zinc-700 tracking-wide border border-zinc-300 rounded px-2 py-0.5 dark:text-zinc-100 dark:border-zinc-700">{insp.score} pts</span>}
+        {trendArrow && <span title={trendArrow.title} className={`font-mono text-sm font-bold cursor-default ${trendArrow.cls}`}>{trendArrow.arrow}</span>}
         {(insp?.score != null || grade) && <GradeInfo align="left" direction="up" />}
         {latestCritCount > 0 && <span className="font-mono text-xs text-red-600 border border-red-300 rounded px-2 py-0.5 dark:text-red-300 dark:border-red-800">{latestCritCount} critical</span>}
       </div>

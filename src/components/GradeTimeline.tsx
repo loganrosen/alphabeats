@@ -220,6 +220,13 @@ export default function GradeTimeline({ inspections, onSelect }: Props) {
                     {insp.score}
                   </text>
                 )}
+                {insp.reinspection && (
+                  <text x={cx + r + 1} y={cy - r + 1} textAnchor="start"
+                    fontSize={8} fontFamily="monospace" fill="#71717a" opacity={0.75}
+                    style={{ pointerEvents: 'none', userSelect: 'none' }}>
+                    R
+                  </text>
+                )}
               </g>
             );
           })}
@@ -240,7 +247,8 @@ export default function GradeTimeline({ inspections, onSelect }: Props) {
                 )}
                 {critCount > 0 && <div className="text-red-400 dark:text-red-600">{critCount} critical violation{critCount !== 1 ? 's' : ''}</div>}
                 {hoveredInsp.closed && <div className="text-orange-400 dark:text-orange-500">Closed by DOHMH</div>}
-                {hoveredInsp.type && <div className="opacity-50 text-[10px] mt-0.5">{hoveredInsp.type}</div>}
+                {hoveredInsp.reinspection && <div className="opacity-60">Re-inspection</div>}
+                {hoveredInsp.type && !hoveredInsp.reinspection && <div className="opacity-50 text-[10px] mt-0.5">{hoveredInsp.type}</div>}
               </div>
             </div>
           );
