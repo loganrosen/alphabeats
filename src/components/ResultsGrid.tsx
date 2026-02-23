@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { Restaurant } from "../api.js";
 import MapView from "./MapView.js";
 import RestaurantCard from "./RestaurantCard.js";
@@ -11,9 +11,44 @@ interface SearchResult {
 	error: string | null;
 }
 
+type SortKey = "grade" | "score" | "recent" | "name" | "distance";
+
+const GRADE_ORDER: Record<string, number> = { A: 0, B: 1, C: 2 };
+
+function applySortKey(list: Restaurant[], key: SortKey): Restaurant[] {
+	const copy = [...list];
+	if (key === "grade")
+		return copy.sort((a, b) => {
+			const ga = GRADE_ORDER[a.latestGraded?.grade ?? ""] ?? 3;
+			const gb = GRADE_ORDER[b.latestGraded?.grade ?? ""] ?? 3;
+			if (ga !== gb) return ga - gb;
+			return a.dba.localeCompare(b.dba);
+		});
+	if (key === "name") return copy.sort((a, b) => a.dba.localeCompare(b.dba));
+	if (key === "score")
+		return copy.sort(
+			(a, b) => (b.latest?.score ?? -1) - (a.latest?.score ?? -1),
+		);
+	if (key === "recent")
+		return copy.sort(
+			(a, b) =>
+				new Date(b.latest?.date ?? "").getTime() -
+				new Date(a.latest?.date ?? "").getTime(),
+		);
+	if (key === "distance")
+		return copy.sort((a, b) => (a.distance ?? Infinity) - (b.distance ?? Infinity));
+	return list;
+}
+
 export default function ResultsGrid({ result }: { result: SearchResult }) {
 	const { status, restaurants, hitLimit, totalRows, error } = result;
 	const [view, setView] = useState<"list" | "map">("list");
+	const hasDistance = restaurants.length > 0 && restaurants[0]?.distance != null;
+	const [sortKey, setSortKey] = useState<SortKey>("grade");
+
+	useEffect(() => {
+		setSortKey(hasDistance ? "distance" : "grade");
+	}, [hasDistance]);
 
 	if (status === "idle")
 		return (
@@ -55,6 +90,17 @@ export default function ResultsGrid({ result }: { result: SearchResult }) {
 				)}
 				<span className="ml-auto flex items-center gap-3">
 					<span>{totalRows.toLocaleString()} inspection records</span>
+					<select
+						value={sortKey}
+						onChange={(e) => setSortKey(e.target.value as SortKey)}
+						className="font-mono text-xs bg-white dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-700 rounded px-2 py-1 text-zinc-700 dark:text-zinc-300 cursor-pointer"
+					>
+						{hasDistance && <option value="distance">Distance</option>}
+						<option value="grade">Grade</option>
+						<option value="score">Violation points ↓</option>
+						<option value="recent">Most recent</option>
+						<option value="name">Name</option>
+					</select>
 					<div className="flex rounded overflow-hidden border border-zinc-300 dark:border-zinc-700 text-xs font-mono">
 						<button
 							onClick={() => setView("list")}
@@ -104,7 +150,7 @@ export default function ResultsGrid({ result }: { result: SearchResult }) {
 				</div>
 			) : view === "list" ? (
 				<div className="grid [grid-template-columns:repeat(auto-fill,minmax(min(340px,100%),1fr))] gap-px bg-zinc-200 dark:bg-zinc-800">
-					{restaurants.map((r) => (
+					{applySortKey(restaurants, sortKey).map((r) => (
 						<RestaurantCard key={r.camis} restaurant={r} />
 					))}
 				</div>
@@ -112,7 +158,7 @@ export default function ResultsGrid({ result }: { result: SearchResult }) {
 				/* On md+: list left, map sticky right. On mobile: map only. */
 				<div className="flex h-[calc(100vh-8rem)]">
 					<div className="hidden md:flex flex-col overflow-y-auto w-[420px] shrink-0 divide-y divide-zinc-200 dark:divide-zinc-800 bg-zinc-50 dark:bg-zinc-950">
-						{restaurants.map((r) => (
+						{applySortKey(restaurants, sortKey).map((r) => (
 							<RestaurantCard key={r.camis} restaurant={r} />
 						))}
 					</div>
