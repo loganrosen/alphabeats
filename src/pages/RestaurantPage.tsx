@@ -5,7 +5,7 @@ import "leaflet/dist/leaflet.css";
 import type { Inspection, Restaurant, Violation } from "../api.js";
 import { fetchByCamis } from "../api.js";
 import GradeTimeline from "../components/GradeTimeline.js";
-import { fmtDate, norm } from "../utils.js";
+import { fmtDate, fmtRelativeAge, inspectionStalenessClass, norm } from "../utils.js";
 
 // ── shared helpers (duplicated from RestaurantCard to keep pages self-contained)
 
@@ -81,6 +81,11 @@ function InspectionSection({
 					<span className="font-mono text-sm text-zinc-700 dark:text-zinc-200">
 						{fmtDate(insp.date)}
 					</span>
+					{isLatest && fmtRelativeAge(insp.date) && (
+						<span className={`font-mono text-xs ${inspectionStalenessClass(insp.date)}`}>
+							{fmtRelativeAge(insp.date)}
+						</span>
+					)}
 					{insp.type && (
 						<span className="font-mono text-xs text-zinc-400 dark:text-zinc-500">
 							{insp.type}

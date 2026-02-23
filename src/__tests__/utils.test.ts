@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { expandAddress, fmtDate, norm } from "../utils.js";
+import { expandAddress, fmtDate, fmtRelativeAge, inspectionStalenessClass, norm } from "../utils.js";
+
+// Helper: build an ISO date string N months in the past, using the same
+// 30.44-day constant as fmtRelativeAge so boundary tests are exact.
+function monthsAgo(n: number): string {
+	return new Date(Date.now() - n * 30.44 * 24 * 60 * 60 * 1000).toISOString();
+}
 
 describe("norm", () => {
 	it("uppercases", () => expect(norm("hello")).toBe("HELLO"));
@@ -58,5 +64,72 @@ describe("fmtDate", () => {
 	it("returns em dash for empty string", () => expect(fmtDate("")).toBe("—"));
 	it("returns em dash for pre-2000 sentinel date", () => {
 		expect(fmtDate("1900-01-01T00:00:00.000")).toBe("—");
+	});
+});
+
+describe("fmtRelativeAge", () => {
+	it("returns null for null/undefined/empty", () => {
+		expect(fmtRelativeAge(null)).toBeNull();
+		expect(fmtRelativeAge(undefined)).toBeNull();
+		expect(fmtRelativeAge("")).toBeNull();
+	});
+
+	it("returns null for pre-2000 sentinel date", () => {
+		expect(fmtRelativeAge("1900-01-01T00:00:00.000")).toBeNull();
+	});
+
+	it("returns 'this month' for a recent date", () => {
+		expect(fmtRelativeAge(monthsAgo(0))).toBe("this month");
+	});
+
+	it("returns months for dates under a year old", () => {
+		expect(fmtRelativeAge(monthsAgo(3))).toBe("3mo ago");
+		expect(fmtRelativeAge(monthsAgo(11))).toBe("11mo ago");
+	});
+
+	it("returns whole years when no remainder", () => {
+		expect(fmtRelativeAge(monthsAgo(12))).toBe("1y ago");
+		expect(fmtRelativeAge(monthsAgo(24))).toBe("2y ago");
+	});
+
+	it("includes remaining months for non-round years", () => {
+		expect(fmtRelativeAge(monthsAgo(14))).toBe("1y 2mo ago");
+		expect(fmtRelativeAge(monthsAgo(27))).toBe("2y 3mo ago");
+	});
+});
+
+describe("inspectionStalenessClass", () => {
+	it("returns base class for null/undefined", () => {
+		const base = "text-zinc-400 dark:text-zinc-500";
+		expect(inspectionStalenessClass(null)).toBe(base);
+		expect(inspectionStalenessClass(undefined)).toBe(base);
+	});
+
+	it("returns base class for fresh inspection (< 12 months)", () => {
+		const base = "text-zinc-400 dark:text-zinc-500";
+		expect(inspectionStalenessClass(monthsAgo(6))).toBe(base);
+	});
+
+	it("returns amber class for 12–23 month old inspection", () => {
+		expect(inspectionStalenessClass(monthsAgo(13))).toBe(
+			"text-amber-500 dark:text-amber-400",
+		);
+		expect(inspectionStalenessClass(monthsAgo(23))).toBe(
+			"text-amber-500 dark:text-amber-400",
+		);
+	});
+
+	it("returns red class for 24+ month old inspection", () => {
+		expect(inspectionStalenessClass(monthsAgo(24))).toBe(
+			"text-red-500 dark:text-red-400",
+		);
+		expect(inspectionStalenessClass(monthsAgo(36))).toBe(
+			"text-red-500 dark:text-red-400",
+		);
+	});
+
+	it("accepts a custom base class", () => {
+		const custom = "text-zinc-300";
+		expect(inspectionStalenessClass(monthsAgo(3), custom)).toBe(custom);
 	});
 });

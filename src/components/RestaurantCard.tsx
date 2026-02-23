@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import type { Inspection, Restaurant, Violation } from "../api.js";
-import { fmtDate, norm } from "../utils.js";
+import { fmtDate, fmtRelativeAge, inspectionStalenessClass, norm } from "../utils.js";
 import { violationCategory } from "../violationCategory.js";
 import GradeInfo from "./GradeInfo.js";
 
@@ -337,10 +337,10 @@ export default function RestaurantCard({
 			)}
 
 			<div className="flex flex-wrap justify-between items-center gap-2 pt-2 border-t border-zinc-200 mt-auto dark:border-zinc-800">
-				<span className="font-mono text-xs text-zinc-400 dark:text-zinc-500">
+				<span className={`font-mono text-xs ${inspectionStalenessClass(insp?.date)}`}>
 					{neverInspected
 						? "No inspection on record"
-						: `Last inspected ${fmtDate(insp?.date)}`}
+						: `Last inspected ${fmtDate(insp?.date)}${fmtRelativeAge(insp?.date) ? ` · ${fmtRelativeAge(insp?.date)}` : ""}`}
 				</span>
 				<div className="flex items-center gap-3">
 					<a
