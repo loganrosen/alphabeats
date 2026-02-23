@@ -262,7 +262,7 @@ export default function SearchForm({
 					<button
 						onClick={onNearby}
 						disabled={loading || nearbyStatus === "loading"}
-						className="font-mono text-sm tracking-widest text-zinc-600 border border-zinc-300 px-4 py-2 rounded-l-md cursor-pointer hover:text-zinc-900 hover:border-zinc-500 transition-colors whitespace-nowrap dark:text-zinc-300 dark:border-zinc-600 dark:hover:text-white dark:hover:border-zinc-400 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
+						className="font-mono text-sm tracking-widest text-zinc-600 border border-zinc-300 px-4 py-2 rounded-md cursor-pointer hover:text-zinc-900 hover:border-zinc-500 transition-colors whitespace-nowrap dark:text-zinc-300 dark:border-zinc-600 dark:hover:text-white dark:hover:border-zinc-400 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
 						title="Find restaurants near your current location"
 					>
 						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -275,7 +275,7 @@ export default function SearchForm({
 						</svg>
 						{nearbyStatus === "loading" ? "…" : "NEAR ME"}
 					</button>
-					<div className="flex border-y border-r border-zinc-300 dark:border-zinc-600 rounded-r-md overflow-hidden">
+					<div className="flex border border-zinc-300 dark:border-zinc-600 rounded-md overflow-hidden">
 						{([0.1, 0.25, 0.5, 1] as const).map((r) => (
 							<button
 								key={r}
