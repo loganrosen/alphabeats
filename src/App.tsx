@@ -105,7 +105,7 @@ export default function App() {
 
 	const resultsRef = useRef<HTMLDivElement>(null);
 
-	const doSearch = useCallback(async (values: SearchParams) => {
+	const doSearch = useCallback(async (values: SearchParams, isRestore = false) => {
 		if (!hasQuery(values)) {
 			setResult(IDLE);
 			writeParams(values);
@@ -120,7 +120,7 @@ export default function App() {
 			error: null,
 		});
 		// On mobile, scroll past the search form to show results
-		setTimeout(
+		if (!isRestore) setTimeout(
 			() =>
 				resultsRef.current?.scrollIntoView({
 					behavior: "smooth",
@@ -160,7 +160,7 @@ export default function App() {
 		if (rawLat && rawLng) {
 			const radius = parseFloat(p.get("radius") ?? "0.25");
 			setNearbyRadius(radius);
-			doNearbySearch(parseFloat(rawLat), parseFloat(rawLng), radius);
+			doNearbySearch(parseFloat(rawLat), parseFloat(rawLng), radius, true);
 			return;
 		}
 		const params = readParams();
@@ -170,7 +170,7 @@ export default function App() {
 			)
 		) {
 			setForm(params);
-			doSearch(params);
+			doSearch(params, true);
 		}
 	}, [doSearch]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -182,7 +182,7 @@ export default function App() {
 	};
 
 	const doNearbySearch = useCallback(
-		async (lat: number, lng: number, overrideRadius?: number) => {
+		async (lat: number, lng: number, overrideRadius?: number, isRestore = false) => {
 			const radius = overrideRadius ?? nearbyRadius;
 			setForm(EMPTY);
 			writeNearbyParams(lat, lng, radius);
@@ -193,7 +193,7 @@ export default function App() {
 				totalRows: 0,
 				error: null,
 			});
-			setTimeout(
+			if (!isRestore) setTimeout(
 				() =>
 					resultsRef.current?.scrollIntoView({
 						behavior: "smooth",
