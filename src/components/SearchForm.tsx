@@ -243,7 +243,7 @@ export default function SearchForm({
 					<button
 						onClick={onSearch}
 						disabled={loading}
-						className="font-display text-lg tracking-wide bg-yellow-400 text-zinc-950 px-6 py-2.5 rounded-md cursor-pointer hover:bg-yellow-300 disabled:opacity-40 disabled:cursor-not-allowed transition-colors whitespace-nowrap"
+						className="font-mono text-sm tracking-widest bg-yellow-400 text-zinc-950 px-6 py-2.5 rounded-md cursor-pointer hover:bg-yellow-300 disabled:opacity-40 disabled:cursor-not-allowed transition-colors whitespace-nowrap"
 					>
 						{loading ? "…" : "SEARCH"}
 					</button>
