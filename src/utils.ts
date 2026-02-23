@@ -66,6 +66,48 @@ export function fmtRelativeAge(d: string | undefined | null): string | null {
 	return rem > 0 ? `${years}y ${rem}mo ago` : `${years}y ago`;
 }
 
+/** Haversine distance in miles between two lat/lng points. */
+export function haversineDistance(
+	lat1: number,
+	lng1: number,
+	lat2: number,
+	lng2: number,
+): number {
+	const R = 3958.8; // Earth radius in miles
+	const dLat = ((lat2 - lat1) * Math.PI) / 180;
+	const dLng = ((lng2 - lng1) * Math.PI) / 180;
+	const a =
+		Math.sin(dLat / 2) ** 2 +
+		Math.cos((lat1 * Math.PI) / 180) *
+			Math.cos((lat2 * Math.PI) / 180) *
+			Math.sin(dLng / 2) ** 2;
+	return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+/** Returns a lat/lng bounding box for a radius (miles) around a point. */
+export function boundingBox(
+	lat: number,
+	lng: number,
+	radiusMi: number,
+): { minLat: number; maxLat: number; minLng: number; maxLng: number } {
+	const miPerDegLat = 69;
+	const latDelta = radiusMi / miPerDegLat;
+	const lngDelta =
+		radiusMi / (miPerDegLat * Math.cos((lat * Math.PI) / 180));
+	return {
+		minLat: lat - latDelta,
+		maxLat: lat + latDelta,
+		minLng: lng - lngDelta,
+		maxLng: lng + lngDelta,
+	};
+}
+
+/** Formats a distance in miles to a short display string. */
+export function fmtDistance(mi: number): string {
+	if (mi < 0.1) return `${Math.round(mi * 5280)} ft`;
+	return `${mi.toFixed(1)} mi`;
+}
+
 /** Returns a Tailwind color class based on how stale the inspection date is. */
 export function inspectionStalenessClass(
 	d: string | undefined | null,

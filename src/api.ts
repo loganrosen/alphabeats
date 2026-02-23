@@ -1,4 +1,4 @@
-import { expandAddress, norm } from "./utils.js";
+import { boundingBox, expandAddress, haversineDistance, norm } from "./utils.js";
 
 const API = "https://data.cityofnewyork.us/resource/43nn-pn8j.json";
 
@@ -42,6 +42,7 @@ export interface Restaurant {
 	inspections: Record<string, Inspection>;
 	latest: Inspection | undefined;
 	latestGraded: Inspection | undefined;
+	distance?: number;
 }
 
 // Raw row shape returned by the NYC Open Data API.
@@ -184,6 +185,38 @@ export async function fetchByCamis(camis: string): Promise<Restaurant | null> {
 	const rows: ApiRow[] = await res.json();
 	if (!rows.length) return null;
 	return groupRows(rows)[0] ?? null;
+}
+
+/** Search for restaurants near a geographic point. */
+export async function searchNearby(
+	lat: number,
+	lng: number,
+	radiusMi = 0.5,
+): Promise<Restaurant[]> {
+	const box = boundingBox(lat, lng, radiusMi);
+	const conditions = [
+		`latitude >= '${box.minLat}'`,
+		`latitude <= '${box.maxLat}'`,
+		`longitude >= '${box.minLng}'`,
+		`longitude <= '${box.maxLng}'`,
+	];
+	const query = new URLSearchParams({
+		$where: conditions.join(" AND "),
+		$order: "inspection_date DESC",
+		$limit: "5000",
+	});
+	const res = await fetch(`${API}?${query}`);
+	if (!res.ok) throw new Error(`HTTP ${res.status}`);
+	const rows: ApiRow[] = await res.json();
+	const restaurants = groupRows(rows);
+	// Sort by distance from the search point
+	return restaurants
+		.filter((r) => r.lat != null && r.lng != null)
+		.map((r) => ({
+			...r,
+			distance: haversineDistance(lat, lng, r.lat!, r.lng!),
+		}))
+		.sort((a, b) => a.distance - b.distance);
 }
 
 // (by camis), keeping all inspections with their violations.

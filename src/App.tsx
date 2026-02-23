@@ -6,11 +6,13 @@ import {
 	groupRows,
 	type Restaurant,
 	type SearchParams,
+	searchNearby,
 	searchRestaurants,
 } from "./api.js";
 import ResultsGrid from "./components/ResultsGrid.js";
 import SearchForm from "./components/SearchForm.js";
 import { type Theme, useTheme } from "./useTheme.js";
+import { useGeolocation } from "./useGeolocation.js";
 
 interface SearchResult {
 	status: "idle" | "loading" | "done" | "error";
@@ -73,6 +75,8 @@ export default function App() {
 	const [cuisines, setCuisines] = useState<string[]>([]);
 	const [communityBoards, setCommunityBoards] = useState<CommunityBoard[]>([]);
 	const { theme, setTheme } = useTheme();
+	const { geo, locate, clear: clearGeo } = useGeolocation();
+	const [nearbyRadius, setNearbyRadius] = useState(0.25);
 
 	useEffect(() => {
 		fetchCuisines().then(setCuisines);
@@ -154,7 +158,56 @@ export default function App() {
 		setForm(EMPTY);
 		writeParams(EMPTY);
 		setResult(IDLE);
+		clearGeo();
 	};
+
+	const doNearbySearch = useCallback(
+		async (lat: number, lng: number) => {
+			setForm(EMPTY);
+			writeParams(EMPTY);
+			setResult({
+				status: "loading",
+				restaurants: [],
+				hitLimit: false,
+				totalRows: 0,
+				error: null,
+			});
+			setTimeout(
+				() =>
+					resultsRef.current?.scrollIntoView({
+						behavior: "smooth",
+						block: "start",
+					}),
+				150,
+			);
+			try {
+				const restaurants = await searchNearby(lat, lng, nearbyRadius);
+				setResult({
+					status: "done",
+					restaurants,
+					hitLimit: false,
+					totalRows: restaurants.length,
+					error: null,
+				});
+			} catch (e) {
+				setResult({
+					status: "error",
+					restaurants: [],
+					hitLimit: false,
+					totalRows: 0,
+					error: (e as Error).message,
+				});
+			}
+		},
+		[nearbyRadius],
+	);
+
+	// Trigger nearby search when geolocation succeeds
+	useEffect(() => {
+		if (geo.status === "success" && geo.lat != null && geo.lng != null) {
+			doNearbySearch(geo.lat, geo.lng);
+		}
+	}, [geo, doNearbySearch]);
 
 	return (
 		<div className="min-h-screen overflow-x-hidden bg-zinc-50 text-zinc-900 font-sans dark:bg-zinc-950 dark:text-zinc-100">
@@ -205,6 +258,11 @@ export default function App() {
 				onChange={setForm}
 				onSearch={() => doSearch(form)}
 				onClear={handleClear}
+				onNearby={locate}
+				nearbyStatus={geo.status}
+				nearbyError={geo.error}
+				nearbyRadius={nearbyRadius}
+				onRadiusChange={setNearbyRadius}
 				loading={result.status === "loading"}
 				cuisines={cuisines}
 				communityBoards={communityBoards}

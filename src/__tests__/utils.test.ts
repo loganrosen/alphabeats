@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { expandAddress, fmtDate, fmtRelativeAge, inspectionStalenessClass, norm } from "../utils.js";
+import { boundingBox, expandAddress, fmtDate, fmtDistance, fmtRelativeAge, haversineDistance, inspectionStalenessClass, norm } from "../utils.js";
 
 // Helper: build an ISO date string N months in the past, using the same
 // 30.44-day constant as fmtRelativeAge so boundary tests are exact.
@@ -131,5 +131,64 @@ describe("inspectionStalenessClass", () => {
 	it("accepts a custom base class", () => {
 		const custom = "text-zinc-300";
 		expect(inspectionStalenessClass(monthsAgo(3), custom)).toBe(custom);
+	});
+});
+
+describe("haversineDistance", () => {
+	it("returns 0 for the same point", () => {
+		expect(haversineDistance(40.7, -74, 40.7, -74)).toBe(0);
+	});
+
+	it("calculates distance between two NYC points (approx)", () => {
+		// Times Square to Central Park (~2 mi)
+		const d = haversineDistance(40.758, -73.9855, 40.7829, -73.9654);
+		expect(d).toBeGreaterThan(1);
+		expect(d).toBeLessThan(3);
+	});
+
+	it("returns distance in miles", () => {
+		// Known distance: JFK to LGA is ~10 miles
+		const d = haversineDistance(40.6413, -73.7781, 40.7769, -73.874);
+		expect(d).toBeGreaterThan(8);
+		expect(d).toBeLessThan(12);
+	});
+});
+
+describe("boundingBox", () => {
+	it("returns a box centered on the point", () => {
+		const box = boundingBox(40.75, -73.99, 1);
+		expect(box.minLat).toBeLessThan(40.75);
+		expect(box.maxLat).toBeGreaterThan(40.75);
+		expect(box.minLng).toBeLessThan(-73.99);
+		expect(box.maxLng).toBeGreaterThan(-73.99);
+	});
+
+	it("produces a symmetric lat range", () => {
+		const box = boundingBox(40.75, -73.99, 1);
+		const latBelow = 40.75 - box.minLat;
+		const latAbove = box.maxLat - 40.75;
+		expect(latBelow).toBeCloseTo(latAbove, 6);
+	});
+
+	it("larger radius produces wider box", () => {
+		const small = boundingBox(40.75, -73.99, 0.5);
+		const large = boundingBox(40.75, -73.99, 2);
+		expect(large.maxLat - large.minLat).toBeGreaterThan(
+			small.maxLat - small.minLat,
+		);
+	});
+});
+
+describe("fmtDistance", () => {
+	it("shows feet for very short distances", () => {
+		expect(fmtDistance(0.05)).toMatch(/ft$/);
+	});
+
+	it("shows miles for longer distances", () => {
+		expect(fmtDistance(0.5)).toBe("0.5 mi");
+	});
+
+	it("shows one decimal place", () => {
+		expect(fmtDistance(1.234)).toBe("1.2 mi");
 	});
 });

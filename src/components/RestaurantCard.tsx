@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import type { Inspection, Restaurant, Violation } from "../api.js";
-import { fmtDate, fmtRelativeAge, inspectionStalenessClass, norm } from "../utils.js";
+import { fmtDate, fmtDistance, fmtRelativeAge, inspectionStalenessClass, norm } from "../utils.js";
 import { violationCategory } from "../violationCategory.js";
 import GradeInfo from "./GradeInfo.js";
 
@@ -238,6 +238,11 @@ export default function RestaurantCard({
 						>
 							{addr}
 						</a>
+						{r.distance != null && (
+							<span className="text-yellow-600 dark:text-yellow-400 font-medium">
+								{fmtDistance(r.distance)}
+							</span>
+						)}
 						{r.phone && (
 							<a
 								href={`tel:${r.phone}`}

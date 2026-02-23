@@ -26,6 +26,11 @@ interface Props {
 	onChange: (fn: (prev: SearchParams) => SearchParams) => void;
 	onSearch: () => void;
 	onClear: () => void;
+	onNearby: () => void;
+	nearbyStatus: "idle" | "loading" | "success" | "error";
+	nearbyError: string | null;
+	nearbyRadius: number;
+	onRadiusChange: (r: number) => void;
 	loading: boolean;
 	cuisines: string[];
 	communityBoards: CommunityBoard[];
@@ -146,6 +151,11 @@ export default function SearchForm({
 	onChange,
 	onSearch,
 	onClear,
+	onNearby,
+	nearbyStatus,
+	nearbyError,
+	nearbyRadius,
+	onRadiusChange,
 	loading,
 	cuisines,
 	communityBoards,
@@ -299,13 +309,57 @@ export default function SearchForm({
 						})}
 					</div>
 				</div>
-				<button
-					onClick={onClear}
-					className="font-mono text-sm tracking-widest text-zinc-600 border border-zinc-300 px-4 py-2.5 rounded-md cursor-pointer hover:text-zinc-900 hover:border-zinc-500 transition-colors whitespace-nowrap dark:text-zinc-300 dark:border-zinc-600 dark:hover:text-white dark:hover:border-zinc-400"
-				>
-					CLEAR
-				</button>
+				<div className="flex items-end gap-3">
+					<div className="flex flex-col gap-1.5">
+						<label className={labelCls}>Near Me</label>
+						<div className="flex">
+							<button
+								onClick={onNearby}
+								disabled={loading || nearbyStatus === "loading"}
+								className="font-mono text-sm tracking-widest text-zinc-600 border border-zinc-300 px-4 py-2.5 rounded-l-md cursor-pointer hover:text-zinc-900 hover:border-zinc-500 transition-colors whitespace-nowrap dark:text-zinc-300 dark:border-zinc-600 dark:hover:text-white dark:hover:border-zinc-400 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
+								title="Find restaurants near your current location"
+							>
+								<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+									<circle cx="12" cy="12" r="10" />
+									<circle cx="12" cy="12" r="3" />
+									<line x1="12" y1="2" x2="12" y2="5" />
+									<line x1="12" y1="19" x2="12" y2="22" />
+									<line x1="2" y1="12" x2="5" y2="12" />
+									<line x1="19" y1="12" x2="22" y2="12" />
+								</svg>
+								{nearbyStatus === "loading" ? "…" : "GO"}
+							</button>
+							<div className="flex border-y border-r border-zinc-300 dark:border-zinc-600 rounded-r-md overflow-hidden">
+								{([0.1, 0.25, 0.5, 1] as const).map((r) => (
+									<button
+										key={r}
+										type="button"
+										onClick={() => onRadiusChange(r)}
+										className={`font-mono text-xs px-2 py-2.5 cursor-pointer transition-colors whitespace-nowrap
+											${nearbyRadius === r
+												? "bg-yellow-400 text-zinc-950"
+												: "text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+											}`}
+									>
+										{r < 1 ? `${r}` : `${r}`}mi
+									</button>
+								))}
+							</div>
+						</div>
+					</div>
+					<button
+						onClick={onClear}
+						className="font-mono text-sm tracking-widest text-zinc-600 border border-zinc-300 px-4 py-2.5 rounded-md cursor-pointer hover:text-zinc-900 hover:border-zinc-500 transition-colors whitespace-nowrap dark:text-zinc-300 dark:border-zinc-600 dark:hover:text-white dark:hover:border-zinc-400"
+					>
+						CLEAR
+					</button>
+				</div>
 			</div>
+			{nearbyStatus === "error" && nearbyError && (
+				<div className="font-mono text-xs text-red-500 mt-2 dark:text-red-400">
+					{nearbyError}
+				</div>
+			)}
 		</div>
 	);
 }
