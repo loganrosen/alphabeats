@@ -168,9 +168,17 @@ export default function SearchForm({
 		if (e.key === "Enter") onSearch();
 	};
 
+	const hasAdvancedFilters =
+		values.address !== "" ||
+		values.zip !== "" ||
+		values.cb !== "" ||
+		values.grade.length > 0;
+	const [showAdvanced, setShowAdvanced] = useState(hasAdvancedFilters);
+
 	return (
 		<div className="bg-zinc-100 border-b border-zinc-200 px-8 py-4 dark:bg-zinc-900 dark:border-zinc-800">
-			<div className="grid grid-cols-[2fr_1.2fr_1.5fr_0.9fr_auto] gap-3 max-w-6xl items-end max-[800px]:grid-cols-1">
+			{/* Primary row: Name, Cuisine, Borough, Search, Near Me, Clear */}
+			<div className="grid grid-cols-[2fr_1.5fr_1.2fr_auto] gap-3 max-w-6xl items-end max-[800px]:grid-cols-1">
 				<div className="flex flex-col gap-1.5">
 					<label className={labelCls}>Restaurant Name</label>
 					<input
@@ -179,6 +187,14 @@ export default function SearchForm({
 						onChange={set("name")}
 						onKeyDown={onKey}
 						placeholder="e.g. Drunken Munkey"
+					/>
+				</div>
+				<div className="flex flex-col gap-1.5">
+					<label className={labelCls}>Cuisine</label>
+					<CuisineCombobox
+						value={values.cuisine}
+						onChange={(v) => onChange((prev) => ({ ...prev, cuisine: v }))}
+						cuisines={cuisines}
 					/>
 				</div>
 				<div className="flex flex-col gap-1.5">
@@ -223,130 +239,14 @@ export default function SearchForm({
 						})}
 					</div>
 				</div>
-				<div className="flex flex-col gap-1.5">
-					<label className={labelCls}>Street Address</label>
-					<input
-						className={inputCls}
-						value={values.address}
-						onChange={set("address")}
-						onKeyDown={onKey}
-						placeholder="e.g. 338 E 92nd St"
-					/>
-				</div>
-				<div className="flex flex-col gap-1.5">
-					<label className={labelCls}>Zip Code</label>
-					<input
-						className={inputCls}
-						value={values.zip}
-						onChange={set("zip")}
-						onKeyDown={onKey}
-						placeholder="e.g. 10128"
-						maxLength={5}
-					/>
-				</div>
-				<button
-					onClick={onSearch}
-					disabled={loading}
-					className="font-display text-lg tracking-wide bg-yellow-400 text-zinc-950 px-6 py-2.5 rounded-md cursor-pointer hover:bg-yellow-300 disabled:opacity-40 disabled:cursor-not-allowed transition-colors whitespace-nowrap"
-				>
-					{loading ? "…" : "SEARCH"}
-				</button>
-			</div>
-
-			<div className="grid grid-cols-[1.5fr_1.2fr_0.8fr_auto] gap-3 max-w-6xl mt-3 items-end max-[800px]:grid-cols-1">
-				<div className="flex flex-col gap-1.5">
-					<label className={labelCls}>Cuisine</label>
-					<CuisineCombobox
-						value={values.cuisine}
-						onChange={(v) => onChange((prev) => ({ ...prev, cuisine: v }))}
-						cuisines={cuisines}
-					/>
-				</div>
-				<div className="flex flex-col gap-1.5 relative">
-					<label className={labelCls}>Neighborhood</label>
-					<CommunityBoardCombobox
-						value={values.cb}
-						onChange={(code) => onChange((prev) => ({ ...prev, cb: code }))}
-						communityBoards={communityBoards}
-						boroFilter={values.boro}
-					/>
-				</div>
-				<div className="flex flex-col gap-1.5">
-					<label className={labelCls}>Grade</label>
-					<div className="flex gap-1.5 flex-wrap py-0.5">
-						{(
-							[
-								["A", "A"],
-								["B", "B"],
-								["C", "C"],
-								["N", "N/A"],
-								["Z", "Pend"],
-							] as [string, string][]
-						).map(([code, label]) => {
-							const active = values.grade.includes(code);
-							return (
-								<button
-									key={code}
-									type="button"
-									onClick={() =>
-										onChange((prev) => ({
-											...prev,
-											grade: active
-												? prev.grade.filter((g) => g !== code)
-												: [...prev.grade, code],
-										}))
-									}
-									className={`font-mono text-xs px-2.5 py-1.5 rounded-md border transition-colors cursor-pointer
-                    ${
-											active
-												? "bg-yellow-400 border-yellow-400 text-zinc-950 dark:bg-yellow-400 dark:border-yellow-400"
-												: "border-zinc-300 text-zinc-600 hover:border-zinc-500 hover:text-zinc-900 dark:border-zinc-600 dark:text-zinc-400 dark:hover:border-zinc-400 dark:hover:text-zinc-100"
-										}`}
-								>
-									{label}
-								</button>
-							);
-						})}
-					</div>
-				</div>
-				<div className="flex items-end gap-3">
-					<div className="flex flex-col gap-1.5">
-						<label className={labelCls}>Near Me</label>
-						<div className="flex">
-							<button
-								onClick={onNearby}
-								disabled={loading || nearbyStatus === "loading"}
-								className="font-mono text-sm tracking-widest text-zinc-600 border border-zinc-300 px-4 py-2.5 rounded-l-md cursor-pointer hover:text-zinc-900 hover:border-zinc-500 transition-colors whitespace-nowrap dark:text-zinc-300 dark:border-zinc-600 dark:hover:text-white dark:hover:border-zinc-400 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
-								title="Find restaurants near your current location"
-							>
-								<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-									<circle cx="12" cy="12" r="10" />
-									<circle cx="12" cy="12" r="3" />
-									<line x1="12" y1="2" x2="12" y2="5" />
-									<line x1="12" y1="19" x2="12" y2="22" />
-									<line x1="2" y1="12" x2="5" y2="12" />
-									<line x1="19" y1="12" x2="22" y2="12" />
-								</svg>
-								{nearbyStatus === "loading" ? "…" : "GO"}
-							</button>
-							<div className="flex border-y border-r border-zinc-300 dark:border-zinc-600 rounded-r-md overflow-hidden">
-								{([0.1, 0.25, 0.5, 1] as const).map((r) => (
-									<button
-										key={r}
-										type="button"
-										onClick={() => onRadiusChange(r)}
-										className={`font-mono text-xs px-2 py-2.5 cursor-pointer transition-colors whitespace-nowrap
-											${nearbyRadius === r
-												? "bg-yellow-400 text-zinc-950"
-												: "text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
-											}`}
-									>
-										{r < 1 ? `${r}` : `${r}`}mi
-									</button>
-								))}
-							</div>
-						</div>
-					</div>
+				<div className="flex items-end gap-2">
+					<button
+						onClick={onSearch}
+						disabled={loading}
+						className="font-display text-lg tracking-wide bg-yellow-400 text-zinc-950 px-6 py-2.5 rounded-md cursor-pointer hover:bg-yellow-300 disabled:opacity-40 disabled:cursor-not-allowed transition-colors whitespace-nowrap"
+					>
+						{loading ? "…" : "SEARCH"}
+					</button>
 					<button
 						onClick={onClear}
 						className="font-mono text-sm tracking-widest text-zinc-600 border border-zinc-300 px-4 py-2.5 rounded-md cursor-pointer hover:text-zinc-900 hover:border-zinc-500 transition-colors whitespace-nowrap dark:text-zinc-300 dark:border-zinc-600 dark:hover:text-white dark:hover:border-zinc-400"
@@ -355,9 +255,134 @@ export default function SearchForm({
 					</button>
 				</div>
 			</div>
+
+			{/* Action row: Near Me + More Filters toggle */}
+			<div className="flex items-center gap-4 max-w-6xl mt-3 flex-wrap">
+				<div className="flex items-center gap-1.5">
+					<button
+						onClick={onNearby}
+						disabled={loading || nearbyStatus === "loading"}
+						className="font-mono text-sm tracking-widest text-zinc-600 border border-zinc-300 px-4 py-2 rounded-l-md cursor-pointer hover:text-zinc-900 hover:border-zinc-500 transition-colors whitespace-nowrap dark:text-zinc-300 dark:border-zinc-600 dark:hover:text-white dark:hover:border-zinc-400 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
+						title="Find restaurants near your current location"
+					>
+						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+							<circle cx="12" cy="12" r="10" />
+							<circle cx="12" cy="12" r="3" />
+							<line x1="12" y1="2" x2="12" y2="5" />
+							<line x1="12" y1="19" x2="12" y2="22" />
+							<line x1="2" y1="12" x2="5" y2="12" />
+							<line x1="19" y1="12" x2="22" y2="12" />
+						</svg>
+						{nearbyStatus === "loading" ? "…" : "NEAR ME"}
+					</button>
+					<div className="flex border-y border-r border-zinc-300 dark:border-zinc-600 rounded-r-md overflow-hidden">
+						{([0.1, 0.25, 0.5, 1] as const).map((r) => (
+							<button
+								key={r}
+								type="button"
+								onClick={() => onRadiusChange(r)}
+								className={`font-mono text-xs px-2 py-2 cursor-pointer transition-colors whitespace-nowrap
+									${nearbyRadius === r
+										? "bg-yellow-400 text-zinc-950"
+										: "text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+									}`}
+							>
+								{r < 1 ? `${r}` : `${r}`}mi
+							</button>
+						))}
+					</div>
+				</div>
+
+				<button
+					type="button"
+					onClick={() => setShowAdvanced((o) => !o)}
+					className="font-mono text-xs tracking-widest text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 transition-colors cursor-pointer flex items-center gap-1.5"
+				>
+					<span className={`transition-transform ${showAdvanced ? "rotate-90" : ""}`}>▶</span>
+					MORE FILTERS
+					{hasAdvancedFilters && !showAdvanced && (
+						<span className="w-1.5 h-1.5 rounded-full bg-yellow-400 shrink-0" />
+					)}
+				</button>
+			</div>
+
 			{nearbyStatus === "error" && nearbyError && (
 				<div className="font-mono text-xs text-red-500 mt-2 dark:text-red-400">
 					{nearbyError}
+				</div>
+			)}
+
+			{/* Advanced filters: Address, Zip, Neighborhood, Grade */}
+			{showAdvanced && (
+				<div className="grid grid-cols-[1.5fr_0.8fr_1.2fr_0.8fr] gap-3 max-w-6xl mt-3 items-end max-[800px]:grid-cols-1">
+					<div className="flex flex-col gap-1.5">
+						<label className={labelCls}>Street Address</label>
+						<input
+							className={inputCls}
+							value={values.address}
+							onChange={set("address")}
+							onKeyDown={onKey}
+							placeholder="e.g. 338 E 92nd St"
+						/>
+					</div>
+					<div className="flex flex-col gap-1.5">
+						<label className={labelCls}>Zip Code</label>
+						<input
+							className={inputCls}
+							value={values.zip}
+							onChange={set("zip")}
+							onKeyDown={onKey}
+							placeholder="e.g. 10128"
+							maxLength={5}
+						/>
+					</div>
+					<div className="flex flex-col gap-1.5 relative">
+						<label className={labelCls}>Neighborhood</label>
+						<CommunityBoardCombobox
+							value={values.cb}
+							onChange={(code) => onChange((prev) => ({ ...prev, cb: code }))}
+							communityBoards={communityBoards}
+							boroFilter={values.boro}
+						/>
+					</div>
+					<div className="flex flex-col gap-1.5">
+						<label className={labelCls}>Grade</label>
+						<div className="flex gap-1.5 flex-wrap py-0.5">
+							{(
+								[
+									["A", "A"],
+									["B", "B"],
+									["C", "C"],
+									["N", "N/A"],
+									["Z", "Pend"],
+								] as [string, string][]
+							).map(([code, label]) => {
+								const active = values.grade.includes(code);
+								return (
+									<button
+										key={code}
+										type="button"
+										onClick={() =>
+											onChange((prev) => ({
+												...prev,
+												grade: active
+													? prev.grade.filter((g) => g !== code)
+													: [...prev.grade, code],
+											}))
+										}
+										className={`font-mono text-xs px-2.5 py-1.5 rounded-md border transition-colors cursor-pointer
+                    ${
+											active
+												? "bg-yellow-400 border-yellow-400 text-zinc-950 dark:bg-yellow-400 dark:border-yellow-400"
+												: "border-zinc-300 text-zinc-600 hover:border-zinc-500 hover:text-zinc-900 dark:border-zinc-600 dark:text-zinc-400 dark:hover:border-zinc-400 dark:hover:text-zinc-100"
+										}`}
+									>
+										{label}
+									</button>
+								);
+							})}
+						</div>
+					</div>
 				</div>
 			)}
 		</div>
