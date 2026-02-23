@@ -54,12 +54,23 @@ function readParams(): SearchParams {
 
 function writeParams(values: SearchParams): void {
 	const url = new URL(window.location.href);
+	for (const k of ["lat", "lng", "radius"]) url.searchParams.delete(k);
 	(Object.entries(values) as [string, string | string[]][]).forEach(
 		([k, v]) => {
 			const s = Array.isArray(v) ? v.join(",") : v;
 			s ? url.searchParams.set(k, s) : url.searchParams.delete(k);
 		},
 	);
+	window.history.replaceState({}, "", url);
+}
+
+function writeNearbyParams(lat: number, lng: number, radius: number): void {
+	const url = new URL(window.location.href);
+	for (const k of ["name", "boro", "address", "zip", "cuisine", "grade", "cb"])
+		url.searchParams.delete(k);
+	url.searchParams.set("lat", String(lat));
+	url.searchParams.set("lng", String(lng));
+	url.searchParams.set("radius", String(radius));
 	window.history.replaceState({}, "", url);
 }
 
@@ -143,6 +154,15 @@ export default function App() {
 	}, []);
 
 	useEffect(() => {
+		const p = new URLSearchParams(window.location.search);
+		const rawLat = p.get("lat");
+		const rawLng = p.get("lng");
+		if (rawLat && rawLng) {
+			const radius = parseFloat(p.get("radius") ?? "0.25");
+			setNearbyRadius(radius);
+			doNearbySearch(parseFloat(rawLat), parseFloat(rawLng), radius);
+			return;
+		}
 		const params = readParams();
 		if (
 			Object.values(params).some((v) =>
@@ -152,7 +172,7 @@ export default function App() {
 			setForm(params);
 			doSearch(params);
 		}
-	}, [doSearch]);
+	}, [doSearch]); // eslint-disable-line react-hooks/exhaustive-deps
 
 	const handleClear = () => {
 		setForm(EMPTY);
@@ -162,9 +182,10 @@ export default function App() {
 	};
 
 	const doNearbySearch = useCallback(
-		async (lat: number, lng: number) => {
+		async (lat: number, lng: number, overrideRadius?: number) => {
+			const radius = overrideRadius ?? nearbyRadius;
 			setForm(EMPTY);
-			writeParams(EMPTY);
+			writeNearbyParams(lat, lng, radius);
 			setResult({
 				status: "loading",
 				restaurants: [],
@@ -181,7 +202,7 @@ export default function App() {
 				150,
 			);
 			try {
-				const restaurants = await searchNearby(lat, lng, nearbyRadius);
+				const restaurants = await searchNearby(lat, lng, radius);
 				setResult({
 					status: "done",
 					restaurants,
