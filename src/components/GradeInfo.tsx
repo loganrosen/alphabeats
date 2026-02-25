@@ -119,7 +119,7 @@ export default function GradeInfo({
             Restaurants scoring 14+ can request a re-inspection before a grade
             is posted.{" "}
             <a
-              href="https://www.nyc.gov/site/doh/business/food-operators/letter-grading-for-restaurants.page"
+              href="https://portal.311.nyc.gov/article/?kanumber=KA-01057"
               target="_blank"
               rel="noopener noreferrer"
               className="text-yellow-600 dark:text-yellow-400 hover:underline"
