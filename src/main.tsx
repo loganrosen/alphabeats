@@ -6,12 +6,12 @@ import RestaurantPage from "./pages/RestaurantPage.js";
 import "./index.css";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
-	<React.StrictMode>
-		<BrowserRouter>
-			<Routes>
-				<Route path="/" element={<App />} />
-				<Route path="/restaurant/:camis" element={<RestaurantPage />} />
-			</Routes>
-		</BrowserRouter>
-	</React.StrictMode>,
+  <React.StrictMode>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<App />} />
+        <Route path="/restaurant/:camis" element={<RestaurantPage />} />
+      </Routes>
+    </BrowserRouter>
+  </React.StrictMode>,
 );
