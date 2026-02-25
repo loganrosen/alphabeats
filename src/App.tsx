@@ -3,16 +3,17 @@ import {
   type CommunityBoard,
   fetchCommunityBoards,
   fetchCuisines,
+  type GeoParams,
   groupRows,
   type Restaurant,
   type SearchParams,
-  searchNearby,
   searchRestaurants,
 } from "./api.js";
 import ResultsGrid from "./components/ResultsGrid.js";
 import SearchForm from "./components/SearchForm.js";
 import { type Theme, useTheme } from "./useTheme.js";
 import { useGeolocation } from "./useGeolocation.js";
+import { haversineDistance } from "./utils.js";
 
 interface SearchResult {
   status: "idle" | "loading" | "done" | "error";
@@ -39,9 +40,9 @@ const IDLE: SearchResult = {
   error: null,
 };
 
-function readParams(): SearchParams {
+function readParams(): { form: SearchParams; geo: GeoParams | null } {
   const p = new URLSearchParams(window.location.search);
-  return {
+  const form: SearchParams = {
     name: p.get("name") ?? "",
     boro: p.get("boro") ? p.get("boro")!.split(",") : [],
     address: p.get("address") ?? "",
@@ -50,27 +51,34 @@ function readParams(): SearchParams {
     grade: p.get("grade") ? p.get("grade")!.split(",") : [],
     cb: p.get("cb") ?? "",
   };
+  const rawLat = p.get("lat");
+  const rawLng = p.get("lng");
+  const geo =
+    rawLat && rawLng
+      ? {
+          lat: parseFloat(rawLat),
+          lng: parseFloat(rawLng),
+          radius: parseFloat(p.get("radius") ?? "0.25"),
+        }
+      : null;
+  return { form, geo };
 }
 
-function writeParams(values: SearchParams): void {
+function writeParams(values: SearchParams, geo?: GeoParams | null): void {
   const url = new URL(window.location.href);
-  for (const k of ["lat", "lng", "radius"]) url.searchParams.delete(k);
   (Object.entries(values) as [string, string | string[]][]).forEach(
     ([k, v]) => {
       const s = Array.isArray(v) ? v.join(",") : v;
       s ? url.searchParams.set(k, s) : url.searchParams.delete(k);
     },
   );
-  window.history.replaceState({}, "", url);
-}
-
-function writeNearbyParams(lat: number, lng: number, radius: number): void {
-  const url = new URL(window.location.href);
-  for (const k of ["name", "boro", "address", "zip", "cuisine", "grade", "cb"])
-    url.searchParams.delete(k);
-  url.searchParams.set("lat", String(lat));
-  url.searchParams.set("lng", String(lng));
-  url.searchParams.set("radius", String(radius));
+  if (geo) {
+    url.searchParams.set("lat", String(geo.lat));
+    url.searchParams.set("lng", String(geo.lng));
+    url.searchParams.set("radius", String(geo.radius));
+  } else {
+    for (const k of ["lat", "lng", "radius"]) url.searchParams.delete(k);
+  }
   window.history.replaceState({}, "", url);
 }
 
@@ -81,20 +89,26 @@ const THEME_OPTIONS: { value: Theme; label: string }[] = [
 ];
 
 export default function App() {
-  const [form, setForm] = useState<SearchParams>(readParams);
+  const [form, setForm] = useState<SearchParams>(() => readParams().form);
+  const [activeGeo, setActiveGeo] = useState<GeoParams | null>(
+    () => readParams().geo,
+  );
   const [result, setResult] = useState<SearchResult>(IDLE);
   const [cuisines, setCuisines] = useState<string[]>([]);
   const [communityBoards, setCommunityBoards] = useState<CommunityBoard[]>([]);
   const { theme, setTheme } = useTheme();
   const { geo, locate, clear: clearGeo } = useGeolocation();
-  const [nearbyRadius, setNearbyRadius] = useState(0.25);
+  const [nearbyRadius, setNearbyRadius] = useState(
+    () => readParams().geo?.radius ?? 0.25,
+  );
 
   useEffect(() => {
     fetchCuisines().then(setCuisines);
     fetchCommunityBoards().then(setCommunityBoards);
   }, []);
 
-  const hasQuery = (values: SearchParams) =>
+  const hasQuery = (values: SearchParams, geo?: GeoParams | null) =>
+    geo != null ||
     values.name !== "" ||
     values.address !== "" ||
     values.zip !== "" ||
@@ -106,13 +120,13 @@ export default function App() {
   const resultsRef = useRef<HTMLDivElement>(null);
 
   const doSearch = useCallback(
-    async (values: SearchParams, isRestore = false) => {
-      if (!hasQuery(values)) {
+    async (values: SearchParams, geo?: GeoParams | null, isRestore = false) => {
+      if (!hasQuery(values, geo)) {
         setResult(IDLE);
-        writeParams(values);
+        writeParams(values, geo);
         return;
       }
-      writeParams(values);
+      writeParams(values, geo);
       setResult({
         status: "loading",
         restaurants: [],
@@ -131,12 +145,29 @@ export default function App() {
           150,
         );
       try {
-        const rows = await searchRestaurants(values);
-        const restaurants = groupRows(rows).filter(
+        const { rows, geo: geoResult } = await searchRestaurants(
+          values,
+          geo ?? undefined,
+        );
+        let restaurants = groupRows(rows).filter(
           (r) =>
             values.grade.length === 0 ||
             values.grade.includes(r.latestGraded?.grade ?? ""),
         );
+        if (geoResult) {
+          restaurants = restaurants
+            .filter((r) => r.lat != null && r.lng != null)
+            .map((r) => ({
+              ...r,
+              distance: haversineDistance(
+                geoResult.lat,
+                geoResult.lng,
+                r.lat!,
+                r.lng!,
+              ),
+            }))
+            .sort((a, b) => (a.distance ?? 0) - (b.distance ?? 0));
+        }
         setResult({
           status: "done",
           restaurants,
@@ -157,93 +188,51 @@ export default function App() {
     [],
   );
 
+  // Restore state from URL on mount
   useEffect(() => {
-    const p = new URLSearchParams(window.location.search);
-    const rawLat = p.get("lat");
-    const rawLng = p.get("lng");
-    if (rawLat && rawLng) {
-      const radius = parseFloat(p.get("radius") ?? "0.25");
-      setNearbyRadius(radius);
-      doNearbySearch(parseFloat(rawLat), parseFloat(rawLng), radius, true);
-      return;
-    }
-    const params = readParams();
-    if (
-      Object.values(params).some((v) =>
-        Array.isArray(v) ? v.length > 0 : Boolean(v),
-      )
-    ) {
-      setForm(params);
-      doSearch(params, true);
+    const { form: urlForm, geo: urlGeo } = readParams();
+    if (hasQuery(urlForm, urlGeo)) {
+      setForm(urlForm);
+      if (urlGeo) {
+        setActiveGeo(urlGeo);
+        setNearbyRadius(urlGeo.radius);
+      }
+      doSearch(urlForm, urlGeo, true);
     }
   }, [doSearch]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleClear = () => {
     setForm(EMPTY);
-    writeParams(EMPTY);
+    setActiveGeo(null);
+    writeParams(EMPTY, null);
     setResult(IDLE);
     clearGeo();
   };
 
-  const doNearbySearch = useCallback(
-    async (
-      lat: number,
-      lng: number,
-      overrideRadius?: number,
-      isRestore = false,
-    ) => {
-      const radius = overrideRadius ?? nearbyRadius;
-      setForm(EMPTY);
-      writeNearbyParams(lat, lng, radius);
-      setResult({
-        status: "loading",
-        restaurants: [],
-        hitLimit: false,
-        totalRows: 0,
-        error: null,
-      });
-      if (!isRestore)
-        setTimeout(
-          () =>
-            resultsRef.current?.scrollIntoView({
-              behavior: "smooth",
-              block: "start",
-            }),
-          150,
-        );
-      try {
-        const restaurants = await searchNearby(lat, lng, radius);
-        setResult({
-          status: "done",
-          restaurants,
-          hitLimit: false,
-          totalRows: restaurants.length,
-          error: null,
-        });
-      } catch (e) {
-        setResult({
-          status: "error",
-          restaurants: [],
-          hitLimit: false,
-          totalRows: 0,
-          error: (e as Error).message,
-        });
-      }
-    },
-    [nearbyRadius],
-  );
+  const handleClearGeo = () => {
+    setActiveGeo(null);
+    writeParams(form, null);
+    clearGeo();
+    doSearch(form, undefined);
+  };
 
-  // Trigger nearby search when geolocation succeeds
+  // Trigger search when geolocation succeeds
   useEffect(() => {
     if (geo.status === "success" && geo.lat != null && geo.lng != null) {
-      doNearbySearch(geo.lat, geo.lng);
+      const newGeo = { lat: geo.lat, lng: geo.lng, radius: nearbyRadius };
+      setActiveGeo(newGeo);
+      doSearch(form, newGeo);
     }
-  }, [geo, doNearbySearch]);
+  }, [geo]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-zinc-50 text-zinc-900 font-sans dark:bg-zinc-950 dark:text-zinc-100">
       <header className="sticky top-0 z-10 bg-white border-b border-zinc-200 px-4 sm:px-8 py-3 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 dark:bg-zinc-950 dark:border-zinc-800">
-        <button type="button" className="flex items-center gap-3 min-w-0 cursor-pointer" onClick={handleClear}>
+        <button
+          type="button"
+          className="flex items-center gap-3 min-w-0 cursor-pointer"
+          onClick={handleClear}
+        >
           <img src="/icon-192.png" alt="" className="h-12 w-12 shrink-0" />
           <div className="flex items-baseline gap-2 min-w-0">
             <span className="font-sans font-bold text-3xl sm:text-4xl tracking-wide leading-none shrink-0">
@@ -290,14 +279,23 @@ export default function App() {
       <SearchForm
         values={form}
         onChange={setForm}
-        onSearch={() => doSearch(form)}
+        onSearch={() => doSearch(form, activeGeo)}
         onClear={handleClear}
         onNearby={locate}
         nearbyStatus={geo.status}
         nearbyError={geo.error}
         nearbyRadius={nearbyRadius}
-        onRadiusChange={setNearbyRadius}
+        onRadiusChange={(r) => {
+          setNearbyRadius(r);
+          if (activeGeo) {
+            const updated = { ...activeGeo, radius: r };
+            setActiveGeo(updated);
+            doSearch(form, updated);
+          }
+        }}
         loading={result.status === "loading"}
+        nearbyActive={activeGeo != null}
+        onClearGeo={handleClearGeo}
         cuisines={cuisines}
         communityBoards={communityBoards}
       />

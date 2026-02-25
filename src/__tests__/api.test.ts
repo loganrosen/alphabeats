@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { SearchParams } from "../api.js";
-import { fetchByCamis, searchNearby, searchRestaurants } from "../api.js";
+import { fetchByCamis, searchRestaurants } from "../api.js";
 
 const EMPTY: SearchParams = {
   name: "",
@@ -126,7 +126,7 @@ describe("searchRestaurants — WHERE clause construction", () => {
     const fakeRows = [{ camis: "123", dba: "TEST" }];
     mockFetch(fakeRows);
     const result = await searchRestaurants(EMPTY);
-    expect(result).toEqual(fakeRows);
+    expect(result.rows).toEqual(fakeRows);
   });
 
   it("throws on non-OK HTTP response", async () => {
@@ -178,10 +178,10 @@ describe("fetchByCamis", () => {
   });
 });
 
-describe("searchNearby", () => {
-  it("builds a bounding-box WHERE clause with lat/lng", async () => {
+describe("searchRestaurants — geo / nearby", () => {
+  it("builds a bounding-box WHERE clause when geo is provided", async () => {
     const mock = mockFetch([]);
-    await searchNearby(40.75, -73.99);
+    await searchRestaurants(EMPTY, { lat: 40.75, lng: -73.99, radius: 0.5 });
     const where = capturedWhere(mock);
     expect(where).toContain("latitude >=");
     expect(where).toContain("latitude <=");
@@ -189,69 +189,34 @@ describe("searchNearby", () => {
     expect(where).toContain("longitude <=");
   });
 
-  it("returns restaurants sorted by distance", async () => {
-    const rows = [
-      {
-        camis: "1",
-        dba: "FAR PLACE",
-        boro: "Manhattan",
-        building: "1",
-        street: "FAR ST",
-        zipcode: "10001",
-        cuisine_description: "American",
-        latitude: "40.77",
-        longitude: "-73.97",
-        inspection_date: "2024-06-01T00:00:00.000",
-        inspection_type: "Cycle Inspection / Initial Inspection",
-        score: "10",
-        grade: "A",
-      },
-      {
-        camis: "2",
-        dba: "CLOSE PLACE",
-        boro: "Manhattan",
-        building: "2",
-        street: "CLOSE ST",
-        zipcode: "10001",
-        cuisine_description: "American",
-        latitude: "40.751",
-        longitude: "-73.991",
-        inspection_date: "2024-06-01T00:00:00.000",
-        inspection_type: "Cycle Inspection / Initial Inspection",
-        score: "8",
-        grade: "A",
-      },
-    ];
-    mockFetch(rows);
-    const results = await searchNearby(40.75, -73.99);
-    expect(results[0].dba).toBe("CLOSE PLACE");
-    expect(results[1].dba).toBe("FAR PLACE");
-    expect(results[0].distance).toBeLessThan(results[1].distance!);
+  it("returns geo in the result when geo is provided", async () => {
+    mockFetch([]);
+    const geo = { lat: 40.75, lng: -73.99, radius: 0.5 };
+    const result = await searchRestaurants(EMPTY, geo);
+    expect(result.geo).toEqual(geo);
   });
 
-  it("filters out restaurants without coordinates", async () => {
-    const rows = [
-      {
-        camis: "1",
-        dba: "NO COORDS",
-        boro: "Manhattan",
-        building: "1",
-        street: "ST",
-        zipcode: "10001",
-        cuisine_description: "American",
-        inspection_date: "2024-06-01T00:00:00.000",
-        inspection_type: "Cycle Inspection / Initial Inspection",
-        score: "10",
-        grade: "A",
-      },
-    ];
-    mockFetch(rows);
-    const results = await searchNearby(40.75, -73.99);
-    expect(results).toHaveLength(0);
+  it("returns geo as undefined when no geo is provided", async () => {
+    mockFetch([]);
+    const result = await searchRestaurants(EMPTY);
+    expect(result.geo).toBeUndefined();
+  });
+
+  it("combines geo bounding box with other filters", async () => {
+    const mock = mockFetch([]);
+    await searchRestaurants(
+      { ...EMPTY, cuisine: "Japanese" },
+      { lat: 40.75, lng: -73.99, radius: 0.5 },
+    );
+    const where = capturedWhere(mock);
+    expect(where).toContain("cuisine_description");
+    expect(where).toContain("latitude >=");
   });
 
   it("throws on non-OK HTTP response", async () => {
     mockFetch([], false);
-    await expect(searchNearby(40.75, -73.99)).rejects.toThrow("HTTP 500");
+    await expect(
+      searchRestaurants(EMPTY, { lat: 40.75, lng: -73.99, radius: 0.5 }),
+    ).rejects.toThrow("HTTP 500");
   });
 });

@@ -27,6 +27,8 @@ interface Props {
   onSearch: () => void;
   onClear: () => void;
   onNearby: () => void;
+  onClearGeo: () => void;
+  nearbyActive: boolean;
   nearbyStatus: "idle" | "loading" | "success" | "error";
   nearbyError: string | null;
   nearbyRadius: number;
@@ -152,6 +154,8 @@ export default function SearchForm({
   onSearch,
   onClear,
   onNearby,
+  onClearGeo,
+  nearbyActive,
   nearbyStatus,
   nearbyError,
   nearbyRadius,
@@ -259,48 +263,73 @@ export default function SearchForm({
       {/* Action row: Near Me + More Filters toggle */}
       <div className="flex items-center gap-4 max-w-6xl mt-3 flex-wrap">
         <div className="flex items-center gap-1.5">
-          <button
-            onClick={onNearby}
-            disabled={loading || nearbyStatus === "loading"}
-            className="font-mono text-sm tracking-widest text-zinc-600 border border-zinc-300 px-4 py-2 rounded-md cursor-pointer hover:text-zinc-900 hover:border-zinc-500 transition-colors whitespace-nowrap dark:text-zinc-300 dark:border-zinc-600 dark:hover:text-white dark:hover:border-zinc-400 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
-            title="Find restaurants near your current location"
-          >
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
+          {nearbyActive ? (
+            <button
+              type="button"
+              onClick={onClearGeo}
+              className="font-mono text-sm tracking-widest px-4 py-2 rounded-md cursor-pointer flex items-center gap-2 bg-yellow-400 text-zinc-950 hover:bg-yellow-500 transition-colors whitespace-nowrap"
+              title="Remove location filter"
             >
-              <circle cx="12" cy="12" r="10" />
-              <circle cx="12" cy="12" r="3" />
-              <line x1="12" y1="2" x2="12" y2="5" />
-              <line x1="12" y1="19" x2="12" y2="22" />
-              <line x1="2" y1="12" x2="5" y2="12" />
-              <line x1="19" y1="12" x2="22" y2="12" />
-            </svg>
-            {nearbyStatus === "loading" ? "…" : "NEAR ME"}
-          </button>
-          <div className="flex border border-zinc-300 dark:border-zinc-600 rounded-md overflow-hidden">
-            {([0.1, 0.25, 0.5, 1] as const).map((r) => (
-              <button
-                key={r}
-                type="button"
-                onClick={() => onRadiusChange(r)}
-                className={`font-mono text-xs px-2 py-2 cursor-pointer transition-colors whitespace-nowrap
-									${
-                    nearbyRadius === r
-                      ? "bg-yellow-400 text-zinc-950"
-                      : "text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
-                  }`}
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
               >
-                {r < 1 ? `${r}` : `${r}`}mi
-              </button>
-            ))}
-          </div>
+                <circle cx="12" cy="12" r="10" />
+                <circle cx="12" cy="12" r="3" />
+                <line x1="12" y1="2" x2="12" y2="5" />
+                <line x1="12" y1="19" x2="12" y2="22" />
+                <line x1="2" y1="12" x2="5" y2="12" />
+                <line x1="19" y1="12" x2="22" y2="12" />
+              </svg>
+              NEAR ME ×
+            </button>
+          ) : (
+            <button
+              onClick={onNearby}
+              disabled={loading || nearbyStatus === "loading"}
+              className="font-mono text-sm tracking-widest text-zinc-600 border border-zinc-300 px-4 py-2 rounded-md cursor-pointer hover:text-zinc-900 hover:border-zinc-500 transition-colors whitespace-nowrap dark:text-zinc-300 dark:border-zinc-600 dark:hover:text-white dark:hover:border-zinc-400 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
+              title="Find restaurants near your current location"
+            >
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <circle cx="12" cy="12" r="10" />
+                <circle cx="12" cy="12" r="3" />
+                <line x1="12" y1="2" x2="12" y2="5" />
+                <line x1="12" y1="19" x2="12" y2="22" />
+                <line x1="2" y1="12" x2="5" y2="12" />
+                <line x1="19" y1="12" x2="22" y2="12" />
+              </svg>
+              {nearbyStatus === "loading" ? "…" : "NEAR ME"}
+            </button>
+          )}
+          {nearbyActive && (
+            <div className="flex border border-zinc-300 dark:border-zinc-600 rounded-md overflow-hidden">
+              {([0.1, 0.25, 0.5, 1] as const).map((r) => (
+                <button
+                  key={r}
+                  type="button"
+                  onClick={() => onRadiusChange(r)}
+                  className={`font-mono text-xs px-2 py-2 cursor-pointer transition-colors whitespace-nowrap ${nearbyRadius === r ? "bg-yellow-400 text-zinc-950" : "text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"}`}
+                >
+                  {r < 1 ? `${r}` : `${r}`}mi
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         <button
