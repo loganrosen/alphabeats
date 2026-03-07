@@ -8,7 +8,18 @@ import {
 } from "react-leaflet";
 import { useNavigate } from "react-router-dom";
 import "leaflet/dist/leaflet.css";
-import type { Restaurant } from "../api.js";
+
+export interface MapItem {
+  id: string;
+  name: string;
+  address: string;
+  lat: number | null;
+  lng: number | null;
+  grade?: string;
+  score?: number | null;
+  link: string;
+  state?: Record<string, unknown>;
+}
 
 const GRADE_COLOR: Record<string, string> = {
   A: "#15803d",
@@ -16,24 +27,20 @@ const GRADE_COLOR: Record<string, string> = {
   C: "#dc2626",
 };
 
-function gradeColor(r: Restaurant): string {
-  return GRADE_COLOR[r.latest?.grade ?? ""] ?? "#71717a";
+function gradeColor(item: MapItem): string {
+  return GRADE_COLOR[item.grade ?? ""] ?? "#71717a";
 }
 
-function FitBounds({ restaurants }: { restaurants: Restaurant[] }) {
+function FitBounds({ items }: { items: (MapItem & { lat: number; lng: number })[] }) {
   const map = useMap();
   useEffect(() => {
-    const points = restaurants.filter((r) => r.lat && r.lng) as (Restaurant & {
-      lat: number;
-      lng: number;
-    })[];
-    if (!points.length) return;
-    if (points.length === 1) {
-      map.setView([points[0].lat, points[0].lng], 16);
+    if (!items.length) return;
+    if (items.length === 1) {
+      map.setView([items[0].lat, items[0].lng], 16);
       return;
     }
-    const lats = points.map((r) => r.lat);
-    const lngs = points.map((r) => r.lng);
+    const lats = items.map((r) => r.lat);
+    const lngs = items.map((r) => r.lng);
     map.fitBounds(
       [
         [Math.min(...lats), Math.min(...lngs)],
@@ -41,17 +48,13 @@ function FitBounds({ restaurants }: { restaurants: Restaurant[] }) {
       ],
       { padding: [40, 40] },
     );
-  }, [restaurants, map]);
+  }, [items, map]);
   return null;
 }
 
-export default function MapView({
-  restaurants,
-}: {
-  restaurants: Restaurant[];
-}) {
+export default function MapView({ items }: { items: MapItem[] }) {
   const navigate = useNavigate();
-  const mapped = restaurants.filter((r) => r.lat && r.lng) as (Restaurant & {
+  const mapped = items.filter((r) => r.lat && r.lng) as (MapItem & {
     lat: number;
     lng: number;
   })[];
@@ -68,35 +71,30 @@ export default function MapView({
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
-        <FitBounds restaurants={restaurants} />
-        {mapped.map((r) => (
+        <FitBounds items={mapped} />
+        {mapped.map((item) => (
           <CircleMarker
-            key={r.camis}
-            center={[r.lat, r.lng]}
+            key={item.id}
+            center={[item.lat, item.lng]}
             radius={7}
             pathOptions={{
               color: "#fff",
               weight: 1.5,
-              fillColor: gradeColor(r),
+              fillColor: gradeColor(item),
               fillOpacity: 0.9,
             }}
             eventHandlers={{
-              click: () =>
-                navigate(`/restaurant/${r.camis}`, {
-                  state: { restaurant: r },
-                }),
+              click: () => navigate(item.link, { state: item.state }),
             }}
           >
             <Tooltip direction="top" offset={[0, -8]} opacity={1}>
               <div className="text-xs font-mono">
-                <div className="font-semibold">{r.dba}</div>
-                <div className="text-zinc-500">
-                  {r.building} {r.street}
-                </div>
-                {r.latest?.grade && (
+                <div className="font-semibold">{item.name}</div>
+                <div className="text-zinc-500">{item.address}</div>
+                {item.grade && (
                   <div>
-                    Grade {r.latest.grade}
-                    {r.latest.score != null ? ` · ${r.latest.score}pts` : ""}
+                    Grade {item.grade}
+                    {item.score != null ? ` · ${item.score}pts` : ""}
                   </div>
                 )}
               </div>
@@ -104,10 +102,10 @@ export default function MapView({
           </CircleMarker>
         ))}
       </MapContainer>
-      {mapped.length < restaurants.length && (
+      {mapped.length < items.length && (
         <div className="absolute bottom-2 left-2 z-[1000] bg-white dark:bg-zinc-900 text-zinc-500 dark:text-zinc-400 font-mono text-xs px-2 py-1 rounded shadow">
-          {restaurants.length - mapped.length} result
-          {restaurants.length - mapped.length !== 1 ? "s" : ""} without
+          {items.length - mapped.length} result
+          {items.length - mapped.length !== 1 ? "s" : ""} without
           coordinates hidden
         </div>
       )}

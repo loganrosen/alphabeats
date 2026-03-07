@@ -9,15 +9,25 @@ import {
   type SearchParams,
   searchRestaurants,
 } from "./api.js";
+import {
+  type Grocery,
+  type GrocerySearchParams,
+  groupGroceryRows,
+  searchGroceries,
+} from "./groceryApi.js";
 import ResultsGrid from "./components/ResultsGrid.js";
 import SearchForm from "./components/SearchForm.js";
+import GrocerySearchForm from "./components/GrocerySearchForm.js";
 import { type Theme, useTheme } from "./useTheme.js";
 import { useGeolocation } from "./useGeolocation.js";
 import { haversineDistance } from "./utils.js";
 
+export type DatasetMode = "restaurant" | "grocery";
+
 interface SearchResult {
   status: "idle" | "loading" | "done" | "error";
   restaurants: Restaurant[];
+  groceries: Grocery[];
   hitLimit: boolean;
   totalRows: number;
   error: string | null;
@@ -32,16 +42,30 @@ const EMPTY: SearchParams = {
   grade: [],
   cb: "",
 };
+const EMPTY_GROCERY: GrocerySearchParams = {
+  name: "",
+  boro: [],
+  address: "",
+  zip: "",
+  grade: [],
+};
 const IDLE: SearchResult = {
   status: "idle",
   restaurants: [],
+  groceries: [],
   hitLimit: false,
   totalRows: 0,
   error: null,
 };
 
-function readParams(): { form: SearchParams; geo: GeoParams | null } {
+function readParams(): {
+  mode: DatasetMode;
+  form: SearchParams;
+  groceryForm: GrocerySearchParams;
+  geo: GeoParams | null;
+} {
   const p = new URLSearchParams(window.location.search);
+  const mode = (p.get("mode") === "grocery" ? "grocery" : "restaurant") as DatasetMode;
   const form: SearchParams = {
     name: p.get("name") ?? "",
     boro: p.get("boro") ? p.get("boro")!.split(",") : [],
@@ -50,6 +74,13 @@ function readParams(): { form: SearchParams; geo: GeoParams | null } {
     cuisine: p.get("cuisine") ?? "",
     grade: p.get("grade") ? p.get("grade")!.split(",") : [],
     cb: p.get("cb") ?? "",
+  };
+  const groceryForm: GrocerySearchParams = {
+    name: p.get("name") ?? "",
+    boro: p.get("boro") ? p.get("boro")!.split(",") : [],
+    address: p.get("address") ?? "",
+    zip: p.get("zip") ?? "",
+    grade: p.get("grade") ? p.get("grade")!.split(",") : [],
   };
   const rawLat = p.get("lat");
   const rawLng = p.get("lng");
@@ -61,23 +92,30 @@ function readParams(): { form: SearchParams; geo: GeoParams | null } {
           radius: parseFloat(p.get("radius") ?? "0.25"),
         }
       : null;
-  return { form, geo };
+  return { mode, form, groceryForm, geo };
 }
 
-function writeParams(values: SearchParams, geo?: GeoParams | null): void {
+function writeParams(
+  mode: DatasetMode,
+  values: SearchParams | GrocerySearchParams,
+  geo?: GeoParams | null,
+): void {
   const url = new URL(window.location.href);
+  // Clear all search-related params first
+  for (const k of ["name", "boro", "address", "zip", "cuisine", "grade", "cb", "mode", "lat", "lng", "radius"]) {
+    url.searchParams.delete(k);
+  }
+  if (mode === "grocery") url.searchParams.set("mode", "grocery");
   (Object.entries(values) as [string, string | string[]][]).forEach(
     ([k, v]) => {
       const s = Array.isArray(v) ? v.join(",") : v;
-      s ? url.searchParams.set(k, s) : url.searchParams.delete(k);
+      if (s) url.searchParams.set(k, s);
     },
   );
   if (geo) {
     url.searchParams.set("lat", String(geo.lat));
     url.searchParams.set("lng", String(geo.lng));
     url.searchParams.set("radius", String(geo.radius));
-  } else {
-    for (const k of ["lat", "lng", "radius"]) url.searchParams.delete(k);
   }
   window.history.replaceState({}, "", url);
 }
@@ -89,7 +127,11 @@ const THEME_OPTIONS: { value: Theme; label: string }[] = [
 ];
 
 export default function App() {
+  const [mode, setMode] = useState<DatasetMode>(() => readParams().mode);
   const [form, setForm] = useState<SearchParams>(() => readParams().form);
+  const [groceryForm, setGroceryForm] = useState<GrocerySearchParams>(
+    () => readParams().groceryForm,
+  );
   const [activeGeo, setActiveGeo] = useState<GeoParams | null>(
     () => readParams().geo,
   );
@@ -107,34 +149,39 @@ export default function App() {
     fetchCommunityBoards().then(setCommunityBoards);
   }, []);
 
-  const hasQuery = (values: SearchParams, geo?: GeoParams | null) =>
+  const hasQuery = (values: SearchParams | GrocerySearchParams, geo?: GeoParams | null) =>
     geo != null ||
     values.name !== "" ||
     values.address !== "" ||
     values.zip !== "" ||
-    values.cuisine !== "" ||
-    values.cb !== "" ||
+    ("cuisine" in values && values.cuisine !== "") ||
+    ("cb" in values && values.cb !== "") ||
     values.boro.length > 0 ||
     values.grade.length > 0;
 
   const resultsRef = useRef<HTMLDivElement>(null);
 
   const doSearch = useCallback(
-    async (values: SearchParams, geo?: GeoParams | null, isRestore = false) => {
+    async (
+      currentMode: DatasetMode,
+      values: SearchParams | GrocerySearchParams,
+      geo?: GeoParams | null,
+      isRestore = false,
+    ) => {
       if (!hasQuery(values, geo)) {
         setResult(IDLE);
-        writeParams(values, geo);
+        writeParams(currentMode, values, geo);
         return;
       }
-      writeParams(values, geo);
+      writeParams(currentMode, values, geo);
       setResult({
         status: "loading",
         restaurants: [],
+        groceries: [],
         hitLimit: false,
         totalRows: 0,
         error: null,
       });
-      // On mobile, scroll past the search form to show results
       if (!isRestore)
         setTimeout(
           () =>
@@ -145,40 +192,80 @@ export default function App() {
           150,
         );
       try {
-        const { rows, geo: geoResult } = await searchRestaurants(
-          values,
-          geo ?? undefined,
-        );
-        let restaurants = groupRows(rows).filter(
-          (r) =>
-            values.grade.length === 0 ||
-            values.grade.includes(r.latestGraded?.grade ?? ""),
-        );
-        if (geoResult) {
-          restaurants = restaurants
-            .filter((r) => r.lat != null && r.lng != null)
-            .map((r) => ({
-              ...r,
-              distance: haversineDistance(
-                geoResult.lat,
-                geoResult.lng,
-                r.lat!,
-                r.lng!,
+        if (currentMode === "grocery") {
+          const { rows, geo: geoResult } = await searchGroceries(
+            values as GrocerySearchParams,
+            geo ?? undefined,
+          );
+          let groceries = groupGroceryRows(rows).filter(
+            (g) =>
+              (values as GrocerySearchParams).grade.length === 0 ||
+              (values as GrocerySearchParams).grade.includes(
+                g.latestGraded?.grade ?? "",
               ),
-            }))
-            .sort((a, b) => (a.distance ?? 0) - (b.distance ?? 0));
+          );
+          if (geoResult) {
+            groceries = groceries
+              .filter((g) => g.lat != null && g.lng != null)
+              .map((g) => ({
+                ...g,
+                distance: haversineDistance(
+                  geoResult.lat,
+                  geoResult.lng,
+                  g.lat!,
+                  g.lng!,
+                ),
+              }))
+              .sort((a, b) => (a.distance ?? 0) - (b.distance ?? 0));
+          }
+          setResult({
+            status: "done",
+            restaurants: [],
+            groceries,
+            hitLimit: rows.length >= 5000,
+            totalRows: rows.length,
+            error: null,
+          });
+        } else {
+          const { rows, geo: geoResult } = await searchRestaurants(
+            values as SearchParams,
+            geo ?? undefined,
+          );
+          let restaurants = groupRows(rows).filter(
+            (r) =>
+              (values as SearchParams).grade.length === 0 ||
+              (values as SearchParams).grade.includes(
+                r.latestGraded?.grade ?? "",
+              ),
+          );
+          if (geoResult) {
+            restaurants = restaurants
+              .filter((r) => r.lat != null && r.lng != null)
+              .map((r) => ({
+                ...r,
+                distance: haversineDistance(
+                  geoResult.lat,
+                  geoResult.lng,
+                  r.lat!,
+                  r.lng!,
+                ),
+              }))
+              .sort((a, b) => (a.distance ?? 0) - (b.distance ?? 0));
+          }
+          setResult({
+            status: "done",
+            restaurants,
+            groceries: [],
+            hitLimit: rows.length >= 5000,
+            totalRows: rows.length,
+            error: null,
+          });
         }
-        setResult({
-          status: "done",
-          restaurants,
-          hitLimit: rows.length >= 5000,
-          totalRows: rows.length,
-          error: null,
-        });
       } catch (e) {
         setResult({
           status: "error",
           restaurants: [],
+          groceries: [],
           hitLimit: false,
           totalRows: 0,
           error: (e as Error).message,
@@ -190,30 +277,64 @@ export default function App() {
 
   // Restore state from URL on mount
   useEffect(() => {
-    const { form: urlForm, geo: urlGeo } = readParams();
-    if (hasQuery(urlForm, urlGeo)) {
-      setForm(urlForm);
-      if (urlGeo) {
-        setActiveGeo(urlGeo);
-        setNearbyRadius(urlGeo.radius);
+    const { mode: urlMode, form: urlForm, groceryForm: urlGroceryForm, geo: urlGeo } = readParams();
+    setMode(urlMode);
+    if (urlMode === "grocery") {
+      if (hasQuery(urlGroceryForm, urlGeo)) {
+        setGroceryForm(urlGroceryForm);
+        if (urlGeo) {
+          setActiveGeo(urlGeo);
+          setNearbyRadius(urlGeo.radius);
+        }
+        doSearch(urlMode, urlGroceryForm, urlGeo, true);
       }
-      doSearch(urlForm, urlGeo, true);
+    } else {
+      if (hasQuery(urlForm, urlGeo)) {
+        setForm(urlForm);
+        if (urlGeo) {
+          setActiveGeo(urlGeo);
+          setNearbyRadius(urlGeo.radius);
+        }
+        doSearch(urlMode, urlForm, urlGeo, true);
+      }
     }
   }, [doSearch]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleClear = () => {
-    setForm(EMPTY);
-    setActiveGeo(null);
-    writeParams(EMPTY, null);
+    if (mode === "grocery") {
+      setGroceryForm(EMPTY_GROCERY);
+      setActiveGeo(null);
+      writeParams(mode, EMPTY_GROCERY, null);
+    } else {
+      setForm(EMPTY);
+      setActiveGeo(null);
+      writeParams(mode, EMPTY, null);
+    }
     setResult(IDLE);
     clearGeo();
   };
 
   const handleClearGeo = () => {
     setActiveGeo(null);
-    writeParams(form, null);
+    const currentForm = mode === "grocery" ? groceryForm : form;
+    writeParams(mode, currentForm, null);
     clearGeo();
-    doSearch(form, undefined);
+    doSearch(mode, currentForm, undefined);
+  };
+
+  const handleModeChange = (newMode: DatasetMode) => {
+    if (newMode === mode) return;
+    setMode(newMode);
+    setResult(IDLE);
+    setActiveGeo(null);
+    clearGeo();
+    if (newMode === "grocery") {
+      setGroceryForm(EMPTY_GROCERY);
+      writeParams(newMode, EMPTY_GROCERY, null);
+    } else {
+      setForm(EMPTY);
+      writeParams(newMode, EMPTY, null);
+    }
   };
 
   // Trigger search when geolocation succeeds
@@ -221,7 +342,8 @@ export default function App() {
     if (geo.status === "success" && geo.lat != null && geo.lng != null) {
       const newGeo = { lat: geo.lat, lng: geo.lng, radius: nearbyRadius };
       setActiveGeo(newGeo);
-      doSearch(form, newGeo);
+      const currentForm = mode === "grocery" ? groceryForm : form;
+      doSearch(mode, currentForm, newGeo);
     }
   }, [geo]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -240,11 +362,38 @@ export default function App() {
               <span className="text-yellow-500 dark:text-yellow-400">eats</span>
             </span>
             <span className="font-mono text-xs text-zinc-500 tracking-widest uppercase dark:text-zinc-300 hidden sm:inline">
-              NYC Restaurant Inspection Search
+              {mode === "grocery"
+                ? "NYC Food Store Inspections"
+                : "NYC Restaurant Inspection Search"}
             </span>
           </div>
         </button>
         <div className="flex items-center gap-3 shrink-0">
+          {/* Dataset toggle */}
+          <div className="flex rounded-md overflow-hidden border border-zinc-300 dark:border-zinc-700 font-mono text-xs">
+            <button
+              onClick={() => handleModeChange("restaurant")}
+              className={`px-3 py-1.5 cursor-pointer transition-colors
+                ${
+                  mode === "restaurant"
+                    ? "bg-zinc-900 text-zinc-100 dark:bg-zinc-100 dark:text-zinc-900"
+                    : "bg-white text-zinc-500 hover:text-zinc-800 dark:bg-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100"
+                }`}
+            >
+              Restaurants
+            </button>
+            <button
+              onClick={() => handleModeChange("grocery")}
+              className={`px-3 py-1.5 cursor-pointer transition-colors border-l border-zinc-300 dark:border-zinc-700
+                ${
+                  mode === "grocery"
+                    ? "bg-zinc-900 text-zinc-100 dark:bg-zinc-100 dark:text-zinc-900"
+                    : "bg-white text-zinc-500 hover:text-zinc-800 dark:bg-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100"
+                }`}
+            >
+              Bodegas &amp; Groceries
+            </button>
+          </div>
           {/* Theme toggle */}
           <div className="flex rounded-md overflow-hidden border border-zinc-300 dark:border-zinc-700 font-mono text-xs">
             {THEME_OPTIONS.map((opt) => (
@@ -263,44 +412,84 @@ export default function App() {
             ))}
           </div>
           <div className="font-mono text-xs text-zinc-500 leading-relaxed text-right dark:text-zinc-300 hidden sm:block">
-            NYC Open Data ·{" "}
-            <a
-              href="https://data.cityofnewyork.us/Health/DOHMH-New-York-City-Restaurant-Inspection-Results/43nn-pn8j"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-yellow-600 hover:text-yellow-500 transition-colors dark:text-yellow-400 dark:hover:text-yellow-300"
-            >
-              DOHMH Inspections
-            </a>
+            {mode === "grocery" ? (
+              <>
+                NY Open Data ·{" "}
+                <a
+                  href="https://data.ny.gov/Economic-Development/Food-Safety-Inspections-Current-Ratings/d6dy-3h7r"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-yellow-600 hover:text-yellow-500 transition-colors dark:text-yellow-400 dark:hover:text-yellow-300"
+                >
+                  AGM Inspections
+                </a>
+              </>
+            ) : (
+              <>
+                NYC Open Data ·{" "}
+                <a
+                  href="https://data.cityofnewyork.us/Health/DOHMH-New-York-City-Restaurant-Inspection-Results/43nn-pn8j"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-yellow-600 hover:text-yellow-500 transition-colors dark:text-yellow-400 dark:hover:text-yellow-300"
+                >
+                  DOHMH Inspections
+                </a>
+              </>
+            )}
           </div>
         </div>
       </header>
 
-      <SearchForm
-        values={form}
-        onChange={setForm}
-        onSearch={() => doSearch(form, activeGeo)}
-        onClear={handleClear}
-        onNearby={locate}
-        nearbyStatus={geo.status}
-        nearbyError={geo.error}
-        nearbyRadius={nearbyRadius}
-        onRadiusChange={(r) => {
-          setNearbyRadius(r);
-          if (activeGeo) {
-            const updated = { ...activeGeo, radius: r };
-            setActiveGeo(updated);
-            doSearch(form, updated);
-          }
-        }}
-        loading={result.status === "loading"}
-        nearbyActive={activeGeo != null}
-        onClearGeo={handleClearGeo}
-        cuisines={cuisines}
-        communityBoards={communityBoards}
-      />
+      {mode === "grocery" ? (
+        <GrocerySearchForm
+          values={groceryForm}
+          onChange={setGroceryForm}
+          onSearch={() => doSearch(mode, groceryForm, activeGeo)}
+          onClear={handleClear}
+          onNearby={locate}
+          nearbyStatus={geo.status}
+          nearbyError={geo.error}
+          nearbyRadius={nearbyRadius}
+          onRadiusChange={(r) => {
+            setNearbyRadius(r);
+            if (activeGeo) {
+              const updated = { ...activeGeo, radius: r };
+              setActiveGeo(updated);
+              doSearch(mode, groceryForm, updated);
+            }
+          }}
+          loading={result.status === "loading"}
+          nearbyActive={activeGeo != null}
+          onClearGeo={handleClearGeo}
+        />
+      ) : (
+        <SearchForm
+          values={form}
+          onChange={setForm}
+          onSearch={() => doSearch(mode, form, activeGeo)}
+          onClear={handleClear}
+          onNearby={locate}
+          nearbyStatus={geo.status}
+          nearbyError={geo.error}
+          nearbyRadius={nearbyRadius}
+          onRadiusChange={(r) => {
+            setNearbyRadius(r);
+            if (activeGeo) {
+              const updated = { ...activeGeo, radius: r };
+              setActiveGeo(updated);
+              doSearch(mode, form, updated);
+            }
+          }}
+          loading={result.status === "loading"}
+          nearbyActive={activeGeo != null}
+          onClearGeo={handleClearGeo}
+          cuisines={cuisines}
+          communityBoards={communityBoards}
+        />
+      )}
       <div ref={resultsRef} className="scroll-mt-14">
-        <ResultsGrid result={result} />
+        <ResultsGrid result={result} mode={mode} />
       </div>
     </div>
   );

@@ -1,11 +1,15 @@
 import { useEffect, useState } from "react";
 import type { Restaurant } from "../api.js";
+import type { Grocery } from "../groceryApi.js";
+import type { DatasetMode } from "../App.js";
 import MapView from "./MapView.js";
 import RestaurantCard from "./RestaurantCard.js";
+import GroceryCard from "./GroceryCard.js";
 
 interface SearchResult {
   status: "idle" | "loading" | "done" | "error";
   restaurants: Restaurant[];
+  groceries: Grocery[];
   hitLimit: boolean;
   totalRows: number;
   error: string | null;
@@ -42,16 +46,46 @@ function applySortKey(list: Restaurant[], key: SortKey): Restaurant[] {
   return list;
 }
 
-export default function ResultsGrid({ result }: { result: SearchResult }) {
-  const { status, restaurants, hitLimit, totalRows, error } = result;
+function applySortKeyGrocery(list: Grocery[], key: SortKey): Grocery[] {
+  const copy = [...list];
+  if (key === "grade")
+    return copy.sort((a, b) => {
+      const ga = GRADE_ORDER[a.latestGraded?.grade ?? ""] ?? 3;
+      const gb = GRADE_ORDER[b.latestGraded?.grade ?? ""] ?? 3;
+      if (ga !== gb) return ga - gb;
+      return a.tradeName.localeCompare(b.tradeName);
+    });
+  if (key === "name")
+    return copy.sort((a, b) => a.tradeName.localeCompare(b.tradeName));
+  if (key === "recent")
+    return copy.sort(
+      (a, b) =>
+        new Date(b.latest?.date ?? "").getTime() -
+        new Date(a.latest?.date ?? "").getTime(),
+    );
+  if (key === "distance")
+    return copy.sort(
+      (a, b) => (a.distance ?? Infinity) - (b.distance ?? Infinity),
+    );
+  return list;
+}
+
+export default function ResultsGrid({
+  result,
+  mode,
+}: { result: SearchResult; mode: DatasetMode }) {
+  const { status, restaurants, groceries, hitLimit, totalRows, error } = result;
+  const isGrocery = mode === "grocery";
+  const items = isGrocery ? groceries : restaurants;
   const [view, setView] = useState<"list" | "map">("list");
-  const hasDistance =
-    restaurants.length > 0 && restaurants[0]?.distance != null;
+  const hasDistance = items.length > 0 && items[0]?.distance != null;
   const [sortKey, setSortKey] = useState<SortKey>("grade");
 
   useEffect(() => {
     setSortKey(hasDistance ? "distance" : "grade");
   }, [hasDistance]);
+
+  const itemLabel = isGrocery ? "store" : "restaurant";
 
   if (status === "idle")
     return (
@@ -59,7 +93,9 @@ export default function ResultsGrid({ result }: { result: SearchResult }) {
         <div className="font-display text-8xl text-zinc-300 mb-4 leading-none dark:text-zinc-800">
           EAT
         </div>
-        ENTER A RESTAURANT NAME, ADDRESS, OR BOROUGH TO BEGIN
+        {isGrocery
+          ? "ENTER A STORE NAME, ADDRESS, OR BOROUGH TO BEGIN"
+          : "ENTER A RESTAURANT NAME, ADDRESS, OR BOROUGH TO BEGIN"}
       </div>
     );
   if (status === "loading")
@@ -84,14 +120,14 @@ export default function ResultsGrid({ result }: { result: SearchResult }) {
       <div className="px-8 py-3 border-b border-zinc-200 flex items-center gap-4 font-mono text-sm text-zinc-500 tracking-wide flex-wrap dark:border-zinc-800 dark:text-zinc-300">
         <span className="flex items-center gap-2">
           <span className="text-zinc-800 font-medium dark:text-zinc-100">
-            {restaurants.length.toLocaleString()} restaurant
-            {restaurants.length !== 1 ? "s" : ""}
+            {items.length.toLocaleString()} {itemLabel}
+            {items.length !== 1 ? "s" : ""}
           </span>
           {"share" in navigator && (
             <button
               onClick={() =>
                 navigator.share({
-                  title: `alphabeats — ${restaurants.length.toLocaleString()} restaurant${restaurants.length !== 1 ? "s" : ""}`,
+                  title: `alphabeats — ${items.length.toLocaleString()} ${itemLabel}${items.length !== 1 ? "s" : ""}`,
                   url: window.location.href,
                 })
               }
@@ -131,7 +167,9 @@ export default function ResultsGrid({ result }: { result: SearchResult }) {
           >
             {hasDistance && <option value="distance">Distance</option>}
             <option value="grade">Grade</option>
-            <option value="score">Violation points ↓</option>
+            {!isGrocery && (
+              <option value="score">Violation points ↓</option>
+            )}
             <option value="recent">Most recent</option>
             <option value="name">Name</option>
           </select>
@@ -175,7 +213,7 @@ export default function ResultsGrid({ result }: { result: SearchResult }) {
         </span>
       </div>
 
-      {restaurants.length === 0 ? (
+      {items.length === 0 ? (
         <div className="py-32 text-center font-mono text-sm text-zinc-500 tracking-widest dark:text-zinc-600">
           <div className="font-display text-8xl text-zinc-300 mb-4 leading-none dark:text-zinc-800">
             0
@@ -184,20 +222,52 @@ export default function ResultsGrid({ result }: { result: SearchResult }) {
         </div>
       ) : view === "list" ? (
         <div className="grid [grid-template-columns:repeat(auto-fill,minmax(min(340px,100%),1fr))] gap-px bg-zinc-200 dark:bg-zinc-800">
-          {applySortKey(restaurants, sortKey).map((r) => (
-            <RestaurantCard key={r.camis} restaurant={r} />
-          ))}
+          {isGrocery
+            ? applySortKeyGrocery(groceries, sortKey).map((g) => (
+                <GroceryCard key={g.id} grocery={g} />
+              ))
+            : applySortKey(restaurants, sortKey).map((r) => (
+                <RestaurantCard key={r.camis} restaurant={r} />
+              ))}
         </div>
       ) : (
-        /* On md+: list left, map sticky right. On mobile: map only. */
         <div className="flex h-[calc(100vh-8rem)]">
           <div className="hidden md:flex flex-col overflow-y-auto w-[420px] shrink-0 divide-y divide-zinc-200 dark:divide-zinc-800 bg-zinc-50 dark:bg-zinc-950">
-            {applySortKey(restaurants, sortKey).map((r) => (
-              <RestaurantCard key={r.camis} restaurant={r} />
-            ))}
+            {isGrocery
+              ? applySortKeyGrocery(groceries, sortKey).map((g) => (
+                  <GroceryCard key={g.id} grocery={g} />
+                ))
+              : applySortKey(restaurants, sortKey).map((r) => (
+                  <RestaurantCard key={r.camis} restaurant={r} />
+                ))}
           </div>
           <div className="flex-1 min-w-0">
-            <MapView restaurants={restaurants} />
+            <MapView
+              items={
+                isGrocery
+                  ? groceries.map((g) => ({
+                      id: g.id,
+                      name: g.tradeName,
+                      address: `${g.street}`,
+                      lat: g.lat,
+                      lng: g.lng,
+                      grade: g.latest?.grade,
+                      link: `/store/${g.id}`,
+                      state: { grocery: g },
+                    }))
+                  : restaurants.map((r) => ({
+                      id: r.camis,
+                      name: r.dba,
+                      address: `${r.building} ${r.street}`,
+                      lat: r.lat,
+                      lng: r.lng,
+                      grade: r.latest?.grade,
+                      score: r.latest?.score,
+                      link: `/restaurant/${r.camis}`,
+                      state: { restaurant: r },
+                    }))
+              }
+            />
           </div>
         </div>
       )}
