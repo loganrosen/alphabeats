@@ -12,6 +12,7 @@ import {
 } from "../utils.js";
 import EmojiSet from "./EmojiSet.js";
 import GradeBadge from "./GradeBadge.js";
+import GroceryGradeInfo from "./GroceryGradeInfo.js";
 
 const categorizeDeficiency = (d: Deficiency) => deficiencyCategory(d.number);
 
@@ -155,6 +156,7 @@ export default function GroceryCard({ grocery: g }: { grocery: Grocery }) {
             {latestDeficiencyCount === 1 ? "y" : "ies"}
           </span>
         )}
+        {grade && <GroceryGradeInfo align="left" direction="up" />}
       </div>
 
       {allInspections.length > 0 && (
