@@ -349,95 +349,96 @@ export default function App() {
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-zinc-50 text-zinc-900 font-sans dark:bg-zinc-950 dark:text-zinc-100">
-      <header className="sticky top-0 z-10 bg-white border-b border-zinc-200 px-4 sm:px-8 py-3 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 dark:bg-zinc-950 dark:border-zinc-800">
-        <button
-          type="button"
-          className="flex items-center gap-3 min-w-0 cursor-pointer"
-          onClick={handleClear}
-        >
-          <img src="/icon-192.png" alt="" className="h-12 w-12 shrink-0" />
-          <div className="flex items-baseline gap-2 min-w-0">
+      <header className="sticky top-0 z-10 bg-white border-b border-zinc-200 dark:bg-zinc-950 dark:border-zinc-800">
+        <div className="px-4 sm:px-8 py-3 flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+          <button
+            type="button"
+            className="flex items-center gap-3 min-w-0 cursor-pointer"
+            onClick={handleClear}
+          >
+            <img src="/icon-192.png" alt="" className="h-12 w-12 shrink-0" />
             <span className="font-sans font-bold text-3xl sm:text-4xl tracking-wide leading-none shrink-0">
               <span className="text-zinc-800 dark:text-zinc-100">alphab</span>
               <span className="text-yellow-500 dark:text-yellow-400">eats</span>
             </span>
-            <span className="font-mono text-xs text-zinc-500 tracking-widest uppercase dark:text-zinc-300 hidden sm:inline">
-              {mode === "grocery"
-                ? "NYC Food Store Inspections"
-                : "NYC Restaurant Inspection Search"}
-            </span>
-          </div>
-        </button>
-        <div className="flex items-center gap-3 shrink-0">
-          {/* Dataset toggle */}
-          <div className="flex rounded-md overflow-hidden border border-zinc-300 dark:border-zinc-700 font-mono text-xs">
-            <button
-              onClick={() => handleModeChange("restaurant")}
-              className={`px-3 py-1.5 cursor-pointer transition-colors
-                ${
-                  mode === "restaurant"
-                    ? "bg-zinc-900 text-zinc-100 dark:bg-zinc-100 dark:text-zinc-900"
-                    : "bg-white text-zinc-500 hover:text-zinc-800 dark:bg-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100"
-                }`}
-            >
-              Restaurants
-            </button>
-            <button
-              onClick={() => handleModeChange("grocery")}
-              className={`px-3 py-1.5 cursor-pointer transition-colors border-l border-zinc-300 dark:border-zinc-700
-                ${
-                  mode === "grocery"
-                    ? "bg-zinc-900 text-zinc-100 dark:bg-zinc-100 dark:text-zinc-900"
-                    : "bg-white text-zinc-500 hover:text-zinc-800 dark:bg-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100"
-                }`}
-            >
-              Bodegas &amp; Groceries
-            </button>
-          </div>
-          {/* Theme toggle */}
-          <div className="flex rounded-md overflow-hidden border border-zinc-300 dark:border-zinc-700 font-mono text-xs">
-            {THEME_OPTIONS.map((opt) => (
-              <button
-                key={opt.value}
-                onClick={() => setTheme(opt.value)}
-                className={`px-3 py-1.5 cursor-pointer transition-colors
-                  ${
-                    theme === opt.value
-                      ? "bg-zinc-900 text-zinc-100 dark:bg-zinc-100 dark:text-zinc-900"
-                      : "bg-white text-zinc-500 hover:text-zinc-800 dark:bg-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100"
-                  }`}
-              >
-                {opt.label}
-              </button>
-            ))}
-          </div>
-          <div className="font-mono text-xs text-zinc-500 leading-relaxed text-right dark:text-zinc-300 hidden sm:block">
-            {mode === "grocery" ? (
-              <>
-                NY Open Data ·{" "}
-                <a
-                  href="https://data.ny.gov/Economic-Development/Food-Safety-Inspections-Current-Ratings/d6dy-3h7r"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-yellow-600 hover:text-yellow-500 transition-colors dark:text-yellow-400 dark:hover:text-yellow-300"
+          </button>
+          <div className="flex items-center gap-3 shrink-0">
+            {/* Theme toggle */}
+            <div className="flex rounded-md overflow-hidden border border-zinc-300 dark:border-zinc-700 font-mono text-xs">
+              {THEME_OPTIONS.map((opt) => (
+                <button
+                  key={opt.value}
+                  onClick={() => setTheme(opt.value)}
+                  className={`px-3 py-1.5 cursor-pointer transition-colors
+                    ${
+                      theme === opt.value
+                        ? "bg-zinc-900 text-zinc-100 dark:bg-zinc-100 dark:text-zinc-900"
+                        : "bg-white text-zinc-500 hover:text-zinc-800 dark:bg-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100"
+                    }`}
                 >
-                  AGM Inspections
-                </a>
-              </>
-            ) : (
-              <>
-                NYC Open Data ·{" "}
-                <a
-                  href="https://data.cityofnewyork.us/Health/DOHMH-New-York-City-Restaurant-Inspection-Results/43nn-pn8j"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-yellow-600 hover:text-yellow-500 transition-colors dark:text-yellow-400 dark:hover:text-yellow-300"
-                >
-                  DOHMH Inspections
-                </a>
-              </>
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+            <div className="font-mono text-xs text-zinc-500 leading-relaxed text-right dark:text-zinc-300 hidden sm:block">
+              {mode === "grocery" ? (
+                <>
+                  NY Open Data ·{" "}
+                  <a
+                    href="https://data.ny.gov/Economic-Development/Food-Safety-Inspections-Current-Ratings/d6dy-3h7r"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-yellow-600 hover:text-yellow-500 transition-colors dark:text-yellow-400 dark:hover:text-yellow-300"
+                  >
+                    AGM Inspections
+                  </a>
+                </>
+              ) : (
+                <>
+                  NYC Open Data ·{" "}
+                  <a
+                    href="https://data.cityofnewyork.us/Health/DOHMH-New-York-City-Restaurant-Inspection-Results/43nn-pn8j"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-yellow-600 hover:text-yellow-500 transition-colors dark:text-yellow-400 dark:hover:text-yellow-300"
+                  >
+                    DOHMH Inspections
+                  </a>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+        {/* Dataset tabs — full-width, prominent */}
+        <div className="flex border-t border-zinc-200 dark:border-zinc-800">
+          <button
+            onClick={() => handleModeChange("restaurant")}
+            className={`flex-1 py-2.5 font-mono text-sm tracking-wide cursor-pointer transition-colors relative
+              ${
+                mode === "restaurant"
+                  ? "text-zinc-900 dark:text-zinc-100 font-semibold"
+                  : "text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300"
+              }`}
+          >
+            🍕 Restaurants
+            {mode === "restaurant" && (
+              <span className="absolute bottom-0 left-[10%] right-[10%] h-[2px] bg-yellow-500 dark:bg-yellow-400 rounded-full" />
             )}
-          </div>
+          </button>
+          <button
+            onClick={() => handleModeChange("grocery")}
+            className={`flex-1 py-2.5 font-mono text-sm tracking-wide cursor-pointer transition-colors relative
+              ${
+                mode === "grocery"
+                  ? "text-zinc-900 dark:text-zinc-100 font-semibold"
+                  : "text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300"
+              }`}
+          >
+            🏪 Bodegas &amp; Groceries
+            {mode === "grocery" && (
+              <span className="absolute bottom-0 left-[10%] right-[10%] h-[2px] bg-yellow-500 dark:bg-yellow-400 rounded-full" />
+            )}
+          </button>
         </div>
       </header>
 
