@@ -1,11 +1,18 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import type { Inspection, Restaurant } from "../api.js";
-import { fmtDate, norm } from "../utils.js";
+import { GRADE_TEXT } from "../gradeStyles.js";
+import {
+  fmtDate,
+  fmtDistance,
+  fmtRelativeAge,
+  inspectionStalenessClass,
+  norm,
+} from "../utils.js";
 import { violationCategory } from "../violationCategory.js";
 import EmojiSet from "./EmojiSet.js";
+import GradeBadge from "./GradeBadge.js";
 import GradeInfo from "./GradeInfo.js";
-import { GRADE_TEXT } from "./InspectionCard.js";
-import InspectionCard from "./InspectionCard.js";
 import ViolationList from "./ViolationList.js";
 
 const GRADE_LABEL: Record<string, string> = {
@@ -37,7 +44,7 @@ function abbrevInspType(type: string | undefined): string {
 const categorizeViolation = (v: { code: string; desc: string }) =>
   violationCategory(v.code, v.desc);
 
-function RestaurantInspectionRow({
+function InspectionRow({
   insp,
   isLatest,
 }: {
@@ -108,8 +115,11 @@ export default function RestaurantCard({
 }: {
   restaurant: Restaurant;
 }) {
+  const [historyOpen, setHistoryOpen] = useState(false);
+
   const insp = r.latest;
   const gradedInsp = r.latestGraded;
+  const neverInspected = !insp;
   const grade = gradedInsp?.grade ?? null;
   const streetPart = [r.building, norm(r.street)].filter(Boolean).join(" ");
   const addr = [streetPart, r.zipcode, r.boro].filter(Boolean).join(" · ");
@@ -156,85 +166,149 @@ export default function RestaurantCard({
     .flatMap((i) => i.violations);
 
   return (
-    <InspectionCard
-      name={r.dba}
-      detailLink={`/restaurant/${r.camis}`}
-      detailLinkState={{ restaurant: r }}
-      detailLinkDataAttr="data-restaurant-link"
-      address={addr}
-      mapsUrl={mapsUrl}
-      yelpUrl={yelpUrl}
-      distance={r.distance}
-      phone={r.phone}
-      grade={grade}
-      gradeDisplay={GRADE_LABEL[grade ?? ""] ?? grade ?? "?"}
-      gradeSublabel={
-        grade === "Z" || grade === "P"
-          ? "PENDING"
-          : grade === "N"
-            ? "UNGRADED"
-            : "GRADE"
-      }
-      neverInspected={!insp}
-      lastInspectedDate={insp?.date}
-      tags={
-        <>
-          {r.cuisine && (
-            <div>
-              <span className="font-mono text-xs text-zinc-600 tracking-wide uppercase border border-zinc-300 rounded px-2 py-0.5 dark:text-zinc-300 dark:border-zinc-700">
-                {r.cuisine}
-              </span>
-            </div>
-          )}
-          <div className="flex gap-1.5 flex-wrap items-center">
-            {insp?.score != null && (
-              <span className="font-mono text-xs text-zinc-700 tracking-wide border border-zinc-300 rounded px-2 py-0.5 dark:text-zinc-100 dark:border-zinc-700">
-                {insp.score} pts
+    <div className="bg-white hover:bg-zinc-50 transition-colors p-5 flex flex-col gap-3 min-w-0 dark:bg-zinc-950 dark:hover:bg-zinc-900 group">
+      <div className="flex justify-between items-start gap-4">
+        <div>
+          <Link
+            data-restaurant-link
+            to={`/restaurant/${r.camis}`}
+            state={{ restaurant: r }}
+            className="font-semibold text-lg leading-snug text-zinc-900 dark:text-zinc-100 hover:text-yellow-600 dark:hover:text-yellow-400 transition-colors group-hover:text-yellow-600 dark:group-hover:text-yellow-400"
+          >
+            {r.dba}
+            <span className="ml-1.5 text-zinc-400 dark:text-zinc-500 group-hover:text-yellow-500 dark:group-hover:text-yellow-400 transition-colors text-base font-normal">
+              →
+            </span>
+          </Link>
+          <div className="font-mono text-sm text-zinc-500 mt-1 tracking-tight dark:text-zinc-300 flex items-center gap-2 flex-wrap">
+            <a
+              href={mapsUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-yellow-600 dark:hover:text-yellow-400 transition-colors"
+            >
+              {addr}
+            </a>
+            {r.distance != null && (
+              <span className="text-yellow-600 dark:text-yellow-400 font-medium">
+                {fmtDistance(r.distance)}
               </span>
             )}
-            {trendArrow && (
-              <span
-                title={trendArrow.title}
-                className={`font-mono text-sm font-bold cursor-default ${trendArrow.cls}`}
+            {r.phone && (
+              <a
+                href={`tel:${r.phone}`}
+                className="hover:text-yellow-600 dark:hover:text-yellow-400 transition-colors opacity-60 hover:opacity-100"
               >
-                {trendArrow.arrow}
-              </span>
-            )}
-            {(insp?.score != null || grade) && (
-              <GradeInfo align="left" direction="up" />
-            )}
-            {latestCritCount > 0 && (
-              <span className="font-mono text-xs text-red-600 border border-red-300 rounded px-2 py-0.5 dark:text-red-300 dark:border-red-800">
-                {latestCritCount} critical
-              </span>
+                📞
+              </a>
             )}
           </div>
-        </>
-      }
-      inspectionCount={allInspections.length}
-      inspectionSummaryExtra={
-        recentViolations.length > 0 ? (
-          <span className="flex items-center gap-0.5 ml-1">
-            <EmojiSet items={recentViolations} categorize={categorizeViolation} />
-            <span className="font-mono text-xs text-zinc-400 dark:text-zinc-500 ml-0.5">
-              12mo
-            </span>
+        </div>
+        <GradeBadge
+          grade={grade}
+          display={GRADE_LABEL[grade ?? ""] ?? grade ?? "?"}
+          sublabel={
+            grade === "Z" || grade === "P"
+              ? "PENDING"
+              : grade === "N"
+                ? "UNGRADED"
+                : "GRADE"
+          }
+          neverInspected={neverInspected}
+        />
+      </div>
+
+      {r.cuisine && (
+        <div>
+          <span className="font-mono text-xs text-zinc-600 tracking-wide uppercase border border-zinc-300 rounded px-2 py-0.5 dark:text-zinc-300 dark:border-zinc-700">
+            {r.cuisine}
           </span>
-        ) : undefined
-      }
-      inspectionRows={allInspections.map((i, idx) => (
-        <RestaurantInspectionRow key={idx} insp={i} isLatest={i === insp} />
-      ))}
-      footerLinks={
-        <a
-          href={`https://a816-health.nyc.gov/ABCEatsRestaurants/#!/Search/${r.camis}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="font-mono text-xs text-yellow-600 hover:text-yellow-500 transition-colors dark:text-yellow-400 dark:hover:text-yellow-300"
+        </div>
+      )}
+      <div className="flex gap-1.5 flex-wrap items-center">
+        {insp?.score != null && (
+          <span className="font-mono text-xs text-zinc-700 tracking-wide border border-zinc-300 rounded px-2 py-0.5 dark:text-zinc-100 dark:border-zinc-700">
+            {insp.score} pts
+          </span>
+        )}
+        {trendArrow && (
+          <span
+            title={trendArrow.title}
+            className={`font-mono text-sm font-bold cursor-default ${trendArrow.cls}`}
+          >
+            {trendArrow.arrow}
+          </span>
+        )}
+        {(insp?.score != null || grade) && (
+          <GradeInfo align="left" direction="up" />
+        )}
+        {latestCritCount > 0 && (
+          <span className="font-mono text-xs text-red-600 border border-red-300 rounded px-2 py-0.5 dark:text-red-300 dark:border-red-800">
+            {latestCritCount} critical
+          </span>
+        )}
+      </div>
+
+      {allInspections.length > 0 && (
+        <>
+          <button
+            onClick={() => setHistoryOpen((o) => !o)}
+            className="font-mono text-sm text-zinc-500 hover:text-zinc-900 transition-colors flex items-center gap-1.5 text-left cursor-pointer dark:text-zinc-400 dark:hover:text-zinc-100"
+          >
+            <span
+              className={`transition-transform ${historyOpen ? "rotate-90" : ""}`}
+            >
+              ▶
+            </span>
+            {allInspections.length} INSPECTION
+            {allInspections.length !== 1 ? "S" : ""}
+            {recentViolations.length > 0 && (
+              <span className="flex items-center gap-0.5 ml-1">
+                <EmojiSet items={recentViolations} categorize={categorizeViolation} />
+                <span className="font-mono text-xs text-zinc-400 dark:text-zinc-500 ml-0.5">
+                  12mo
+                </span>
+              </span>
+            )}
+          </button>
+
+          {historyOpen && (
+            <div className="flex flex-col gap-1.5">
+              {allInspections.map((i, idx) => (
+                <InspectionRow key={idx} insp={i} isLatest={i === insp} />
+              ))}
+            </div>
+          )}
+        </>
+      )}
+
+      <div className="flex flex-wrap justify-between items-center gap-2 pt-2 border-t border-zinc-200 mt-auto dark:border-zinc-800">
+        <span
+          className={`font-mono text-xs ${inspectionStalenessClass(insp?.date)}`}
         >
-          NYC Health ↗
-        </a>
-      }
-    />
+          {neverInspected
+            ? "No inspection on record"
+            : `Last inspected ${fmtDate(insp?.date)}${fmtRelativeAge(insp?.date) ? ` · ${fmtRelativeAge(insp?.date)}` : ""}`}
+        </span>
+        <div className="flex items-center gap-3">
+          <a
+            href={yelpUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-mono text-xs text-yellow-600 hover:text-yellow-500 transition-colors dark:text-yellow-400 dark:hover:text-yellow-300"
+          >
+            Yelp ↗
+          </a>
+          <a
+            href={`https://a816-health.nyc.gov/ABCEatsRestaurants/#!/Search/${r.camis}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-mono text-xs text-yellow-600 hover:text-yellow-500 transition-colors dark:text-yellow-400 dark:hover:text-yellow-300"
+          >
+            NYC Health ↗
+          </a>
+        </div>
+      </div>
+    </div>
   );
 }
