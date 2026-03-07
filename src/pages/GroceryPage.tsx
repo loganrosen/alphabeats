@@ -4,6 +4,7 @@ import { useLocation, useNavigate, useParams } from "react-router-dom";
 import "leaflet/dist/leaflet.css";
 import type { Grocery, GroceryInspection } from "../groceryApi.js";
 import { fetchGroceryById } from "../groceryApi.js";
+import { deficiencyCategory } from "../deficiencyCategory.js";
 import { fmtDate, fmtRelativeAge, inspectionStalenessClass, norm } from "../utils.js";
 
 const GRADE_STYLES: Record<string, string> = { A: "bg-green-700", B: "bg-amber-600", C: "bg-red-600" };
@@ -58,12 +59,16 @@ function InspectionSection({
       </div>
       {insp.deficiencies.length > 0 ? (
         <ul className="flex flex-col gap-2">
-          {insp.deficiencies.map((d, i) => (
-            <li key={i} className="font-mono text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
-              <span className="text-zinc-400 dark:text-zinc-500 mr-1.5">#{d.number}</span>
-              {d.description}
-            </li>
-          ))}
+          {insp.deficiencies.map((d, i) => {
+            const cat = deficiencyCategory(d.number);
+            return (
+              <li key={i} className="font-mono text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
+                <span className="mr-1" title={cat.label}>{cat.emoji}</span>
+                <span className="text-zinc-400 dark:text-zinc-500 mr-1.5">#{d.number}</span>
+                {d.description}
+              </li>
+            );
+          })}
         </ul>
       ) : (
         <p className="font-mono text-xs text-zinc-400 dark:text-zinc-500">

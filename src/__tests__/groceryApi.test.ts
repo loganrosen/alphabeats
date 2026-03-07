@@ -349,3 +349,25 @@ describe("Constants", () => {
     expect(Object.keys(ESTABLISHMENT_TYPES).length).toBeGreaterThanOrEqual(19);
   });
 });
+
+// --- deficiencyCategory tests ---
+import { deficiencyCategory } from "../deficiencyCategory.js";
+
+describe("deficiencyCategory", () => {
+  it("maps temperature codes", () => {
+    expect(deficiencyCategory("04A")).toEqual({ emoji: "🌡️", label: "Temperature" });
+    expect(deficiencyCategory("04F")).toEqual({ emoji: "🌡️", label: "Temperature" });
+  });
+
+  it("maps pest control codes", () => {
+    expect(deficiencyCategory("10B")).toEqual({ emoji: "🐀", label: "Pest control" });
+  });
+
+  it("maps cleanliness codes", () => {
+    expect(deficiencyCategory("09A")).toEqual({ emoji: "🧹", label: "Cleanliness" });
+  });
+
+  it("returns default for unknown codes", () => {
+    expect(deficiencyCategory("99Z")).toEqual({ emoji: "📌", label: "Other" });
+  });
+});

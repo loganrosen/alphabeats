@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { deficiencyCategory } from "../deficiencyCategory.js";
 import type { Grocery, GroceryInspection } from "../groceryApi.js";
 import {
   fmtDate,
@@ -68,17 +69,21 @@ function InspectionRow({
       {open && insp.deficiencies.length > 0 && (
         <div className="px-3 pb-3 border-t border-zinc-100 dark:border-zinc-800 pt-2">
           <ul className="flex flex-col gap-1.5">
-            {insp.deficiencies.map((d, i) => (
-              <li
-                key={i}
-                className="font-mono text-xs text-zinc-600 dark:text-zinc-300 leading-snug"
-              >
-                <span className="text-zinc-400 dark:text-zinc-500">
-                  [{d.number}]
-                </span>{" "}
-                {d.description}
-              </li>
-            ))}
+            {insp.deficiencies.map((d, i) => {
+              const cat = deficiencyCategory(d.number);
+              return (
+                <li
+                  key={i}
+                  className="font-mono text-xs text-zinc-600 dark:text-zinc-300 leading-snug"
+                >
+                  <span className="mr-1" title={cat.label}>{cat.emoji}</span>
+                  <span className="text-zinc-400 dark:text-zinc-500">
+                    [{d.number}]
+                  </span>{" "}
+                  {d.description}
+                </li>
+              );
+            })}
           </ul>
         </div>
       )}
