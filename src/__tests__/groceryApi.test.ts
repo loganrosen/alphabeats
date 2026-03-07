@@ -359,8 +359,12 @@ describe("deficiencyCategory", () => {
     expect(deficiencyCategory("04F")).toEqual({ emoji: "🌡️", label: "Temperature" });
   });
 
-  it("maps pest control codes", () => {
-    expect(deficiencyCategory("10B")).toEqual({ emoji: "🐀", label: "Pest control" });
+  it("maps pest/contamination codes", () => {
+    expect(deficiencyCategory("02A")).toEqual({ emoji: "🐀", label: "Food contamination" });
+  });
+
+  it("maps building maintenance codes", () => {
+    expect(deficiencyCategory("10B")).toEqual({ emoji: "🏚️", label: "Building maintenance" });
   });
 
   it("maps cleanliness codes", () => {

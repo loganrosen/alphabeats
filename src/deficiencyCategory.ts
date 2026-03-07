@@ -5,7 +5,7 @@ export interface DeficiencyCategory {
 
 const CATEGORIES: Record<string, DeficiencyCategory> = {
   "01": { emoji: "🥫", label: "Food sources" },
-  "02": { emoji: "🛡️", label: "Food protection" },
+  "02": { emoji: "🐀", label: "Food contamination" },
   "03": { emoji: "🏷️", label: "Labeling" },
   "04": { emoji: "🌡️", label: "Temperature" },
   "05": { emoji: "🚰", label: "Water supply" },
@@ -13,7 +13,7 @@ const CATEGORIES: Record<string, DeficiencyCategory> = {
   "07": { emoji: "🚻", label: "Facilities" },
   "08": { emoji: "☠️", label: "Toxic materials" },
   "09": { emoji: "🧹", label: "Cleanliness" },
-  "10": { emoji: "🐀", label: "Pest control" },
+  "10": { emoji: "🏚️", label: "Building maintenance" },
   "11": { emoji: "🧤", label: "Personnel hygiene" },
   "12": { emoji: "🔧", label: "Equipment" },
   "13": { emoji: "🏗️", label: "Facility construction" },
