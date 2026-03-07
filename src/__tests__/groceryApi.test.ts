@@ -1,15 +1,43 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   generateStoreId,
   parseStoreId,
   getEstablishmentTypeLabel,
   groupGroceryRows,
+  searchGroceries,
+  fetchGroceryById,
   COUNTY_TO_BOROUGH,
   BOROUGH_TO_COUNTY,
   NYC_COUNTIES,
   ESTABLISHMENT_TYPES,
   type GroceryApiRow,
+  type GrocerySearchParams,
 } from "../groceryApi.js";
+
+const EMPTY: GrocerySearchParams = {
+  name: "",
+  boro: [],
+  address: "",
+  zip: "",
+  grade: [],
+};
+
+function mockFetch(data: unknown = [], ok = true) {
+  const mock = vi.fn().mockResolvedValue({
+    ok,
+    status: ok ? 200 : 500,
+    json: () => Promise.resolve(data),
+  });
+  vi.stubGlobal("fetch", mock);
+  return mock;
+}
+
+function capturedWhere(mock: ReturnType<typeof vi.fn>): string {
+  const url = new URL(mock.mock.calls[0][0] as string);
+  return url.searchParams.get("$where") ?? "";
+}
+
+beforeEach(() => vi.restoreAllMocks());
 
 function makeRow(overrides: Partial<GroceryApiRow> = {}): GroceryApiRow {
   return {
@@ -347,6 +375,157 @@ describe("Constants", () => {
     expect(ESTABLISHMENT_TYPES["C"]).toBe("Food Mfr");
     expect(ESTABLISHMENT_TYPES["D"]).toBe("Warehouse");
     expect(Object.keys(ESTABLISHMENT_TYPES).length).toBeGreaterThanOrEqual(19);
+  });
+});
+
+describe("searchGroceries — WHERE clause construction", () => {
+  it("always includes NYC county filter and establishment type A", async () => {
+    const mock = mockFetch([]);
+    await searchGroceries(EMPTY);
+    const where = capturedWhere(mock);
+    expect(where).toContain("county IN (");
+    expect(where).toContain("establishment_type LIKE '%A%'");
+  });
+
+  it("matches name tokens at word boundaries", async () => {
+    const mock = mockFetch([]);
+    await searchGroceries({ ...EMPTY, name: "fresh market" });
+    const where = capturedWhere(mock);
+    expect(where).toContain("upper(trade_name) like 'FRESH%'");
+    expect(where).toContain("upper(trade_name) like '% FRESH%'");
+    expect(where).toContain("upper(trade_name) like 'MARKET%'");
+    expect(where).toContain("upper(trade_name) like '% MARKET%'");
+  });
+
+  it("escapes single quotes in name", async () => {
+    const mock = mockFetch([]);
+    await searchGroceries({ ...EMPTY, name: "tony's" });
+    const where = capturedWhere(mock);
+    expect(where).toContain("TONY''S");
+  });
+
+  it("filters by single borough (maps to county)", async () => {
+    const mock = mockFetch([]);
+    await searchGroceries({ ...EMPTY, boro: ["Brooklyn"] });
+    expect(capturedWhere(mock)).toContain("county='Kings'");
+  });
+
+  it("filters by multiple boroughs with OR", async () => {
+    const mock = mockFetch([]);
+    await searchGroceries({ ...EMPTY, boro: ["Manhattan", "Queens"] });
+    const where = capturedWhere(mock);
+    expect(where).toContain("county='New York'");
+    expect(where).toContain("county='Queens'");
+    expect(where).toContain(" OR ");
+  });
+
+  it("filters by zip code", async () => {
+    const mock = mockFetch([]);
+    await searchGroceries({ ...EMPTY, zip: "11201" });
+    expect(capturedWhere(mock)).toContain("zipcode='11201'");
+  });
+
+  it("expands address tokens and matches each independently", async () => {
+    const mock = mockFetch([]);
+    await searchGroceries({ ...EMPTY, address: "338 E 92nd St" });
+    const where = capturedWhere(mock);
+    expect(where).toContain("upper(street)");
+    expect(where).toContain("338");
+    expect(where).toContain("EAST");
+    expect(where).toContain("STREET");
+  });
+
+  it("does NOT include grade in the server-side WHERE clause", async () => {
+    const mock = mockFetch([]);
+    await searchGroceries({ ...EMPTY, grade: ["A"] });
+    expect(capturedWhere(mock)).not.toContain("inspection_grade");
+  });
+
+  it("builds within_circle clause when geo is provided", async () => {
+    const mock = mockFetch([]);
+    await searchGroceries(EMPTY, { lat: 40.75, lng: -73.99, radius: 0.5 });
+    const where = capturedWhere(mock);
+    expect(where).toContain("within_circle(georeference,");
+  });
+
+  it("combines geo with other filters", async () => {
+    const mock = mockFetch([]);
+    await searchGroceries(
+      { ...EMPTY, name: "deli" },
+      { lat: 40.75, lng: -73.99, radius: 0.5 },
+    );
+    const where = capturedWhere(mock);
+    expect(where).toContain("trade_name");
+    expect(where).toContain("within_circle");
+  });
+
+  it("returns geo in the result when provided", async () => {
+    mockFetch([]);
+    const geo = { lat: 40.75, lng: -73.99, radius: 0.5 };
+    const result = await searchGroceries(EMPTY, geo);
+    expect(result.geo).toEqual(geo);
+  });
+
+  it("returns geo as undefined when not provided", async () => {
+    mockFetch([]);
+    const result = await searchGroceries(EMPTY);
+    expect(result.geo).toBeUndefined();
+  });
+
+  it("returns the parsed JSON rows", async () => {
+    const fakeRows = [{ trade_name: "TEST" }];
+    mockFetch(fakeRows);
+    const result = await searchGroceries(EMPTY);
+    expect(result.rows).toEqual(fakeRows);
+  });
+
+  it("throws on non-OK HTTP response", async () => {
+    mockFetch([], false);
+    await expect(searchGroceries(EMPTY)).rejects.toThrow("HTTP 500");
+  });
+});
+
+describe("fetchGroceryById", () => {
+  it("queries by parsed store ID fields and returns grouped grocery", async () => {
+    const id = generateStoreId("TEST STORE", "123 MAIN ST", "11201");
+    const rows = [
+      makeRow({
+        trade_name: "TEST STORE",
+        street: "123 MAIN ST",
+        zipcode: "11201",
+        inspection_date: "2024-06-01T00:00:00.000",
+        inspection_grade: "A",
+      }),
+    ];
+    const mock = mockFetch(rows);
+    const result = await fetchGroceryById(id);
+    const where = capturedWhere(mock);
+    expect(where).toContain("upper(trade_name)=");
+    expect(where).toContain("upper(street)=");
+    expect(where).toContain("zipcode='11201'");
+    expect(result).not.toBeNull();
+    expect(result!.tradeName).toBe("TEST STORE");
+  });
+
+  it("returns null when no rows are returned", async () => {
+    mockFetch([]);
+    const id = generateStoreId("NOPE", "1 FAKE ST", "00000");
+    const result = await fetchGroceryById(id);
+    expect(result).toBeNull();
+  });
+
+  it("throws on non-OK HTTP response", async () => {
+    mockFetch([], false);
+    const id = generateStoreId("X", "Y", "Z");
+    await expect(fetchGroceryById(id)).rejects.toThrow("HTTP 500");
+  });
+
+  it("escapes single quotes in parsed fields", async () => {
+    const id = generateStoreId("Tony's", "O'Brien St", "11201");
+    const mock = mockFetch([]);
+    await fetchGroceryById(id);
+    const where = capturedWhere(mock);
+    expect(where).toContain("''");
   });
 });
 

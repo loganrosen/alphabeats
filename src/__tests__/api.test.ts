@@ -1,6 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { SearchParams } from "../api.js";
-import { fetchByCamis, searchRestaurants } from "../api.js";
+import {
+  fetchByCamis,
+  fetchCommunityBoards,
+  fetchCuisines,
+  searchRestaurants,
+} from "../api.js";
 
 const EMPTY: SearchParams = {
   name: "",
@@ -27,7 +32,17 @@ function capturedWhere(mock: ReturnType<typeof vi.fn>): string {
   return url.searchParams.get("$where") ?? "";
 }
 
-beforeEach(() => vi.restoreAllMocks());
+beforeEach(() => {
+  vi.restoreAllMocks();
+  // Mock sessionStorage for caching tests (fetchCommunityBoards, fetchCuisines)
+  const store: Record<string, string> = {};
+  vi.stubGlobal("sessionStorage", {
+    getItem: (k: string) => store[k] ?? null,
+    setItem: (k: string, v: string) => { store[k] = v; },
+    removeItem: (k: string) => { delete store[k]; },
+    clear: () => { for (const k of Object.keys(store)) delete store[k]; },
+  });
+});
 
 describe("searchRestaurants — WHERE clause construction", () => {
   it("sends empty $where when no params are set", async () => {
@@ -218,5 +233,118 @@ describe("searchRestaurants — geo / nearby", () => {
     await expect(
       searchRestaurants(EMPTY, { lat: 40.75, lng: -73.99, radius: 0.5 }),
     ).rejects.toThrow("HTTP 500");
+  });
+});
+
+describe("fetchCommunityBoards", () => {
+  it("fetches and returns parsed community boards", async () => {
+    const rows = [
+      {
+        community_board_1: "101",
+        neighborhoods: "Tribeca, Financial District",
+        borough: "Manhattan",
+      },
+      {
+        community_board_1: "301",
+        neighborhoods: "Greenpoint, Williamsburg",
+        borough: "Brooklyn",
+      },
+    ];
+    mockFetch(rows);
+    const result = await fetchCommunityBoards();
+    expect(result).toHaveLength(2);
+    expect(result[0]).toEqual({
+      code: "101",
+      label: "Tribeca, Financial District",
+      borough: "Manhattan",
+    });
+    expect(result[1]).toEqual({
+      code: "301",
+      label: "Greenpoint, Williamsburg",
+      borough: "Brooklyn",
+    });
+  });
+
+  it("filters out rows with missing community_board_1 or neighborhoods", async () => {
+    const rows = [
+      { community_board_1: "101", neighborhoods: "Tribeca", borough: "Manhattan" },
+      { community_board_1: undefined, neighborhoods: "Missing CB", borough: "Manhattan" },
+      { community_board_1: "102", neighborhoods: undefined, borough: "Manhattan" },
+    ];
+    mockFetch(rows);
+    const result = await fetchCommunityBoards();
+    expect(result).toHaveLength(1);
+    expect(result[0].code).toBe("101");
+  });
+
+  it("returns empty array on non-OK response", async () => {
+    mockFetch([], false);
+    const result = await fetchCommunityBoards();
+    expect(result).toEqual([]);
+  });
+
+  it("handles rows with missing borough gracefully", async () => {
+    const rows = [
+      { community_board_1: "101", neighborhoods: "Test Area", borough: undefined },
+    ];
+    mockFetch(rows);
+    const result = await fetchCommunityBoards();
+    expect(result[0].borough).toBe("");
+  });
+
+  it("returns cached data from sessionStorage on second call", async () => {
+    const rows = [
+      { community_board_1: "101", neighborhoods: "Tribeca", borough: "Manhattan" },
+    ];
+    const mock = mockFetch(rows);
+    const first = await fetchCommunityBoards();
+    expect(mock).toHaveBeenCalledTimes(1);
+
+    // Second call should use sessionStorage cache
+    const second = await fetchCommunityBoards();
+    expect(mock).toHaveBeenCalledTimes(1); // No additional fetch
+    expect(second).toEqual(first);
+  });
+});
+
+describe("fetchCuisines", () => {
+  it("fetches and returns cuisine names", async () => {
+    const rows = [
+      { cuisine_description: "American" },
+      { cuisine_description: "Japanese" },
+      { cuisine_description: "Mexican" },
+    ];
+    mockFetch(rows);
+    const result = await fetchCuisines();
+    expect(result).toEqual(["American", "Japanese", "Mexican"]);
+  });
+
+  it("filters out empty/undefined cuisine descriptions", async () => {
+    const rows = [
+      { cuisine_description: "American" },
+      { cuisine_description: undefined },
+      { cuisine_description: "" },
+      { cuisine_description: "Thai" },
+    ];
+    mockFetch(rows);
+    const result = await fetchCuisines();
+    expect(result).toEqual(["American", "Thai"]);
+  });
+
+  it("returns empty array on non-OK response", async () => {
+    mockFetch([], false);
+    const result = await fetchCuisines();
+    expect(result).toEqual([]);
+  });
+
+  it("returns cached data from sessionStorage on second call", async () => {
+    const rows = [{ cuisine_description: "Italian" }];
+    const mock = mockFetch(rows);
+    const first = await fetchCuisines();
+    expect(mock).toHaveBeenCalledTimes(1);
+
+    const second = await fetchCuisines();
+    expect(mock).toHaveBeenCalledTimes(1);
+    expect(second).toEqual(first);
   });
 });
