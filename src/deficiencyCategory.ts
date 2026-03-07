@@ -4,6 +4,7 @@ export interface DeficiencyCategory {
 }
 
 // Categories from NYS AGM Sanitary Inspection Guidelines (FSI-890, Rev. 3/2025)
+// https://agriculture.ny.gov/system/files/documents/2025/03/sanitary_inspection_guidelines_fsi-890.pdf
 // 01–08 are Critical Deficiencies, 09–16 are General Deficiencies
 const CATEGORIES: Record<string, DeficiencyCategory> = {
   "01": { emoji: "🥫", label: "Unapproved sources" },
