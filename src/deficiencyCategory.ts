@@ -3,23 +3,25 @@ export interface DeficiencyCategory {
   label: string;
 }
 
+// Categories from NYS AGM Sanitary Inspection Guidelines (FSI-890, Rev. 3/2025)
+// 01–08 are Critical Deficiencies, 09–16 are General Deficiencies
 const CATEGORIES: Record<string, DeficiencyCategory> = {
-  "01": { emoji: "🥫", label: "Food sources" },
-  "02": { emoji: "🐀", label: "Food contamination" },
-  "03": { emoji: "🏷️", label: "Labeling" },
-  "04": { emoji: "🌡️", label: "Temperature" },
-  "05": { emoji: "🚰", label: "Water supply" },
-  "06": { emoji: "🪠", label: "Plumbing" },
-  "07": { emoji: "🚻", label: "Facilities" },
-  "08": { emoji: "☠️", label: "Toxic materials" },
-  "09": { emoji: "🧹", label: "Cleanliness" },
+  "01": { emoji: "🥫", label: "Unapproved sources" },
+  "02": { emoji: "🐀", label: "Adulterated food" },
+  "03": { emoji: "🧤", label: "Worker contamination" },
+  "04": { emoji: "⚠️", label: "Cross-contamination" },
+  "05": { emoji: "🧪", label: "Critical processing" },
+  "06": { emoji: "🌡️", label: "Cooling & refrigeration" },
+  "07": { emoji: "🔥", label: "Cooking & reheating" },
+  "08": { emoji: "♨️", label: "Hot-holding" },
+  "09": { emoji: "🚰", label: "Sanitary facilities" },
   "10": { emoji: "🏚️", label: "Building maintenance" },
-  "11": { emoji: "🧤", label: "Personnel hygiene" },
-  "12": { emoji: "🔧", label: "Equipment" },
-  "13": { emoji: "🏗️", label: "Facility construction" },
-  "14": { emoji: "💡", label: "Lighting & ventilation" },
-  "15": { emoji: "📋", label: "Compliance" },
-  "16": { emoji: "📄", label: "Licensing" },
+  "11": { emoji: "👔", label: "Food handler hygiene" },
+  "12": { emoji: "📦", label: "Food storage" },
+  "13": { emoji: "📋", label: "Processing & records" },
+  "14": { emoji: "🪳", label: "Pest activity" },
+  "15": { emoji: "🔧", label: "Equipment & utensils" },
+  "16": { emoji: "🧹", label: "Other sanitation" },
 };
 
 const DEFAULT: DeficiencyCategory = { emoji: "📌", label: "Other" };

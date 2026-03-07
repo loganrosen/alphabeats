@@ -355,20 +355,28 @@ import { deficiencyCategory } from "../deficiencyCategory.js";
 
 describe("deficiencyCategory", () => {
   it("maps temperature codes", () => {
-    expect(deficiencyCategory("04A")).toEqual({ emoji: "🌡️", label: "Temperature" });
-    expect(deficiencyCategory("04F")).toEqual({ emoji: "🌡️", label: "Temperature" });
+    expect(deficiencyCategory("06A")).toEqual({ emoji: "🌡️", label: "Cooling & refrigeration" });
+    expect(deficiencyCategory("06B")).toEqual({ emoji: "🌡️", label: "Cooling & refrigeration" });
   });
 
   it("maps pest/contamination codes", () => {
-    expect(deficiencyCategory("02A")).toEqual({ emoji: "🐀", label: "Food contamination" });
+    expect(deficiencyCategory("02A")).toEqual({ emoji: "🐀", label: "Adulterated food" });
+  });
+
+  it("maps pest activity codes", () => {
+    expect(deficiencyCategory("14A")).toEqual({ emoji: "🪳", label: "Pest activity" });
   });
 
   it("maps building maintenance codes", () => {
     expect(deficiencyCategory("10B")).toEqual({ emoji: "🏚️", label: "Building maintenance" });
   });
 
+  it("maps cross-contamination codes", () => {
+    expect(deficiencyCategory("04F")).toEqual({ emoji: "⚠️", label: "Cross-contamination" });
+  });
+
   it("maps cleanliness codes", () => {
-    expect(deficiencyCategory("09A")).toEqual({ emoji: "🧹", label: "Cleanliness" });
+    expect(deficiencyCategory("09A")).toEqual({ emoji: "🚰", label: "Sanitary facilities" });
   });
 
   it("returns default for unknown codes", () => {
