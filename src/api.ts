@@ -1,3 +1,6 @@
+import { GRADE_ORDER } from "./gradeStyles.js";
+import type { GeoParams } from "./geo.js";
+export type { GeoParams } from "./geo.js";
 import { boundingBox, expandAddress, norm } from "./utils.js";
 
 const API = "https://data.cityofnewyork.us/resource/43nn-pn8j.json";
@@ -112,12 +115,6 @@ export async function fetchCuisines(): Promise<string[]> {
   const result = rows.map((r) => r.cuisine_description ?? "").filter(Boolean);
   sessionStorage.setItem(CACHE_KEY, JSON.stringify(result));
   return result;
-}
-
-export interface GeoParams {
-  lat: number;
-  lng: number;
-  radius: number;
 }
 
 export async function searchRestaurants(
@@ -258,8 +255,6 @@ export function groupRows(rows: ApiRow[]): Restaurant[] {
     }
   }
 
-  const gradeOrder: Record<string, number> = { A: 0, B: 1, C: 2 };
-
   return Object.values(map)
     .map((rest) => {
       const sorted = Object.values(rest.inspections).sort(
@@ -271,8 +266,8 @@ export function groupRows(rows: ApiRow[]): Restaurant[] {
       return rest;
     })
     .sort((a, b) => {
-      const ga = gradeOrder[a.latestGraded?.grade ?? ""] ?? 3;
-      const gb = gradeOrder[b.latestGraded?.grade ?? ""] ?? 3;
+      const ga = GRADE_ORDER[a.latestGraded?.grade ?? ""] ?? 3;
+      const gb = GRADE_ORDER[b.latestGraded?.grade ?? ""] ?? 3;
       if (ga !== gb) return ga - gb;
       return a.dba.localeCompare(b.dba);
     });

@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
-import { CircleMarker, MapContainer, TileLayer } from "react-leaflet";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-import "leaflet/dist/leaflet.css";
 import type { Inspection, Restaurant } from "../api.js";
 import { fetchByCamis } from "../api.js";
+import { GRADE_LABEL, GRADE_TEXT } from "../gradeStyles.js";
+import GradeBadge from "../components/GradeBadge.js";
 import GradeTimeline from "../components/GradeTimeline.js";
+import MiniMap from "../components/MiniMap.js";
 import ViolationList from "../components/ViolationList.js";
 import {
   fmtDate,
@@ -38,25 +39,6 @@ function recurringCategories(
     .filter((c) => c.count >= 2)
     .sort((a, b) => b.count - a.count);
 }
-
-const GRADE_STYLES: Record<string, string> = {
-  A: "bg-green-700",
-  B: "bg-amber-600",
-  C: "bg-red-600",
-};
-const GRADE_LABEL: Record<string, string> = {
-  A: "A",
-  B: "B",
-  C: "C",
-  N: "N",
-  Z: "P",
-  P: "P",
-};
-const GRADE_TEXT: Record<string, string> = {
-  A: "text-green-700 dark:text-green-400",
-  B: "text-amber-600 dark:text-amber-400",
-  C: "text-red-600 dark:text-red-400",
-};
 
 function InspectionSection({
   insp,
@@ -242,28 +224,19 @@ export default function RestaurantPage() {
                   </span>
                 )}
               </div>
-              {grade ? (
-                <div
-                  className={`${GRADE_STYLES[grade] ?? "bg-zinc-400 dark:bg-zinc-700"} w-14 rounded shrink-0 flex flex-col items-center justify-center relative text-white py-3`}
-                >
-                  <span className="font-display text-4xl leading-none">
-                    {GRADE_LABEL[grade] ?? grade}
-                  </span>
-                  <span className="font-mono text-[0.45rem] tracking-widest mt-1 opacity-75">
-                    {grade === "Z" || grade === "P"
+              <GradeBadge
+                  grade={grade}
+                  display={grade ? (GRADE_LABEL[grade] ?? grade) : undefined}
+                  sublabel={
+                    grade === "Z" || grade === "P"
                       ? "PENDING"
                       : grade === "N"
                         ? "UNGRADED"
-                        : "GRADE"}
-                  </span>
-                </div>
-              ) : (
-                <div className="w-14 rounded shrink-0 flex flex-col items-center justify-center bg-zinc-100 dark:bg-zinc-800 text-zinc-400 dark:text-zinc-500 border border-zinc-200 dark:border-zinc-700 px-2 py-3">
-                  <span className="font-mono text-xs text-center leading-tight">
-                    NOT YET
-                  </span>
-                </div>
-              )}
+                        : "GRADE"
+                  }
+                  neverInspected={!grade}
+                  size="lg"
+                />
             </div>
 
             <div className="flex items-center gap-4 mb-6 flex-wrap">
@@ -317,32 +290,7 @@ export default function RestaurantPage() {
 
             {/* Mini map */}
             {restaurant.lat && restaurant.lng && (
-              <div
-                className="rounded overflow-hidden mb-8"
-                style={{ height: 180 }}
-              >
-                <MapContainer
-                  center={[restaurant.lat, restaurant.lng]}
-                  zoom={16}
-                  style={{ height: "100%", width: "100%" }}
-                  zoomControl={false}
-                  scrollWheelZoom={false}
-                  dragging={false}
-                  attributionControl={false}
-                >
-                  <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                  <CircleMarker
-                    center={[restaurant.lat, restaurant.lng]}
-                    radius={8}
-                    pathOptions={{
-                      color: "#fff",
-                      weight: 2,
-                      fillColor: "#ca8a04",
-                      fillOpacity: 1,
-                    }}
-                  />
-                </MapContainer>
-              </div>
+              <MiniMap lat={restaurant.lat} lng={restaurant.lng} />
             )}
 
             {/* Grade timeline */}

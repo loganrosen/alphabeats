@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import type { Inspection, Restaurant } from "../api.js";
-import { GRADE_TEXT } from "../gradeStyles.js";
+import { GRADE_LABEL, GRADE_TEXT } from "../gradeStyles.js";
 import {
   fmtDate,
   fmtDistance,
@@ -14,15 +14,6 @@ import EmojiSet from "./EmojiSet.js";
 import GradeBadge from "./GradeBadge.js";
 import GradeInfo from "./GradeInfo.js";
 import ViolationList from "./ViolationList.js";
-
-const GRADE_LABEL: Record<string, string> = {
-  A: "A",
-  B: "B",
-  C: "C",
-  N: "N",
-  Z: "P",
-  P: "P",
-};
 
 function abbrevInspType(type: string | undefined): string {
   if (!type) return "";

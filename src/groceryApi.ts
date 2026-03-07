@@ -1,3 +1,6 @@
+import type { GeoParams } from "./geo.js";
+export type { GeoParams } from "./geo.js";
+import { GRADE_ORDER } from "./gradeStyles.js";
 import { expandAddress, norm } from "./utils.js";
 
 const API = "https://data.ny.gov/resource/d6dy-3h7r.json";
@@ -132,12 +135,6 @@ export function parseStoreId(id: string): {
     street: parts[1] ?? "",
     zipcode: parts[2] ?? "",
   };
-}
-
-export interface GeoParams {
-  lat: number;
-  lng: number;
-  radius: number;
 }
 
 export async function searchGroceries(
@@ -287,8 +284,6 @@ export function groupGroceryRows(rows: GroceryApiRow[]): Grocery[] {
     }
   }
 
-  const gradeOrder: Record<string, number> = { A: 0, B: 1, C: 2 };
-
   return Object.values(map)
     .map((store) => {
       const sorted = Object.values(store.inspections).sort(
@@ -300,8 +295,8 @@ export function groupGroceryRows(rows: GroceryApiRow[]): Grocery[] {
       return store;
     })
     .sort((a, b) => {
-      const ga = gradeOrder[a.latestGraded?.grade ?? ""] ?? 3;
-      const gb = gradeOrder[b.latestGraded?.grade ?? ""] ?? 3;
+      const ga = GRADE_ORDER[a.latestGraded?.grade ?? ""] ?? 3;
+      const gb = GRADE_ORDER[b.latestGraded?.grade ?? ""] ?? 3;
       if (ga !== gb) return ga - gb;
       return a.tradeName.localeCompare(b.tradeName);
     });
