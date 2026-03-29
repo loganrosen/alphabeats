@@ -38,6 +38,35 @@ describe("groupRows", () => {
     expect(inspections[0].violations).toHaveLength(2);
   });
 
+  it("consolidates different inspection types on the same date", () => {
+    const rows = [
+      row({
+        inspection_date: "2026-03-02T00:00:00.000",
+        inspection_type: "Pre-permit (Operational) / Initial Inspection",
+        grade: "N",
+        score: "62",
+        violation_code: "02B",
+        violation_description: "Hot food not held above 140°F",
+        critical_flag: "Critical",
+      }),
+      row({
+        inspection_date: "2026-03-02T00:00:00.000",
+        inspection_type: "Administrative Miscellaneous / Initial Inspection",
+        grade: "",
+        score: undefined,
+        violation_code: "20-04",
+        violation_description: "Choking poster not posted",
+        critical_flag: "Not Critical",
+      }),
+    ];
+    const [rest] = groupRows(rows);
+    const inspections = Object.values(rest.inspections);
+    expect(inspections).toHaveLength(1);
+    expect(inspections[0].score).toBe(62);
+    expect(inspections[0].grade).toBe("N");
+    expect(inspections[0].violations).toHaveLength(2);
+  });
+
   it("creates separate inspections for different dates", () => {
     const rows = [
       row({

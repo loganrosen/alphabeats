@@ -224,7 +224,9 @@ export function groupRows(rows: ApiRow[]): Restaurant[] {
       };
     }
 
-    const key = `${r.inspection_date ?? ""}|${r.inspection_type ?? ""}`;
+    // Key by date only so same-day inspections (e.g. a scored inspection
+    // plus an administrative one) are consolidated into a single entry.
+    const key = r.inspection_date ?? "";
     const rest = map[r.camis];
 
     // Skip sentinel rows — 1900-01-01 means the restaurant has no inspections on record
@@ -244,6 +246,14 @@ export function groupRows(rows: ApiRow[]): Restaurant[] {
         reinspection:
           r.inspection_type?.toLowerCase().includes("re-inspection") ?? false,
       };
+    } else {
+      const insp = rest.inspections[key];
+      if (!insp.grade && r.grade) insp.grade = r.grade;
+      if (insp.score == null && r.score != null)
+        insp.score = parseInt(r.score, 10);
+      if (r.action?.toLowerCase().includes("closed")) insp.closed = true;
+      if (r.inspection_type?.toLowerCase().includes("re-inspection"))
+        insp.reinspection = true;
     }
 
     if (r.violation_code) {
