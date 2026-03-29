@@ -13,6 +13,7 @@ import { violationCategory } from "../violationCategory.js";
 import EmojiSet from "./EmojiSet.js";
 import GradeBadge from "./GradeBadge.js";
 import GradeInfo from "./GradeInfo.js";
+import InfoPopover from "./InfoPopover.js";
 import ViolationList from "./ViolationList.js";
 
 function abbrevInspType(type: string | undefined): string {
@@ -72,6 +73,11 @@ function InspectionRow({
         )}
 
         <div className="ml-auto flex items-center gap-1.5 shrink-0">
+          {insp.closed && (
+            <span className="font-mono text-xs text-orange-600 border border-orange-300 rounded px-1.5 py-0.5 dark:text-orange-300 dark:border-orange-800">
+              closed
+            </span>
+          )}
           {critCount > 0 && (
             <span className="font-mono text-xs text-red-500 dark:text-red-400">
               {critCount}✕ crit
@@ -256,8 +262,12 @@ export default function RestaurantCard({
             {recentViolations.length > 0 && (
               <span className="flex items-center gap-0.5 ml-1">
                 <EmojiSet items={recentViolations} categorize={categorizeViolation} />
-                <span className="font-mono text-xs text-zinc-400 dark:text-zinc-500 ml-0.5">
-                  12mo
+                <span className="ml-0.5">
+                  <InfoPopover align="left" direction="up">
+                    <p className="text-xs text-zinc-600 dark:text-zinc-300 leading-relaxed">
+                      Violation categories from the past 12 months.
+                    </p>
+                  </InfoPopover>
                 </span>
               </span>
             )}
