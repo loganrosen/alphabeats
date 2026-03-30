@@ -78,7 +78,7 @@ export interface CommunityBoard {
 }
 
 export async function fetchCommunityBoards(): Promise<CommunityBoard[]> {
-  const CACHE_KEY = "alphabeats:community_boards";
+  const CACHE_KEY = "eatsafe:community_boards";
   const cached = sessionStorage.getItem(CACHE_KEY);
   if (cached) return JSON.parse(cached);
   const url =
@@ -103,7 +103,7 @@ export async function fetchCommunityBoards(): Promise<CommunityBoard[]> {
 }
 
 export async function fetchCuisines(): Promise<string[]> {
-  const CACHE_KEY = "alphabeats:cuisines";
+  const CACHE_KEY = "eatsafe:cuisines";
   const cached = sessionStorage.getItem(CACHE_KEY);
   if (cached) return JSON.parse(cached);
   const url =

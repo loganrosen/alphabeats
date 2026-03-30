@@ -1,8 +1,8 @@
-# Alphabeats
+# EatSafe
 
 A better search interface for [NYC DOHMH restaurant inspection data](https://data.cityofnewyork.us/Health/DOHMH-New-York-City-Restaurant-Inspection-Results/43nn-pn8j).
 
-**[alphabeats.loganrosen.com](https://alphabeats.loganrosen.com)**
+**[eatsafe.loganrosen.com](https://eatsafe.loganrosen.com)**
 
 ## Features
 
@@ -28,4 +28,4 @@ npm run dev
 
 ## Deploy
 
-Pushes to `main` automatically deploy to [alphabeats.loganrosen.com](https://alphabeats.loganrosen.com) via GitHub Actions.
+Pushes to `main` automatically deploy to [eatsafe.loganrosen.com](https://eatsafe.loganrosen.com) via GitHub Actions.

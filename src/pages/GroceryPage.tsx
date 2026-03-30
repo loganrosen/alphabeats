@@ -157,9 +157,9 @@ export default function GroceryPage() {
   useEffect(() => {
     window.scrollTo(0, 0);
     if (passedGrocery) {
-      document.title = `${passedGrocery.tradeName} — alphabeats`;
+      document.title = `${passedGrocery.tradeName} — eatsafe`;
       return () => {
-        document.title = "alphabeats — NYC Restaurant Inspection Search";
+        document.title = "eatsafe — NYC Restaurant Inspection Search";
       };
     }
     if (!storeId) return;
@@ -168,12 +168,12 @@ export default function GroceryPage() {
     fetchGroceryById(storeId)
       .then((g) => {
         setGrocery(g);
-        if (g) document.title = `${g.tradeName} — alphabeats`;
+        if (g) document.title = `${g.tradeName} — eatsafe`;
       })
       .catch((e) => setError(String(e)))
       .finally(() => setLoading(false));
     return () => {
-      document.title = "alphabeats — NYC Restaurant Inspection Search";
+      document.title = "eatsafe — NYC Restaurant Inspection Search";
     };
   }, [storeId]); // eslint-disable-line react-hooks/exhaustive-deps
 

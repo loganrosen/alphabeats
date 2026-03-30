@@ -10,8 +10,8 @@ export default defineConfig({
     VitePWA({
       registerType: "autoUpdate",
       manifest: {
-        name: "alphabeats",
-        short_name: "alphabeats",
+        name: "eatsafe",
+        short_name: "eatsafe",
         description: "NYC restaurant inspection search",
         theme_color: "#ffffff",
         background_color: "#ffffff",

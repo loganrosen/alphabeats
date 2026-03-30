@@ -134,9 +134,9 @@ export default function RestaurantPage() {
   useEffect(() => {
     window.scrollTo(0, 0);
     if (passedRestaurant) {
-      document.title = `${passedRestaurant.dba} — alphabeats`;
+      document.title = `${passedRestaurant.dba} — eatsafe`;
       return () => {
-        document.title = "alphabeats — NYC Restaurant Inspection Search";
+        document.title = "eatsafe — NYC Restaurant Inspection Search";
       };
     }
     if (!camis) return;
@@ -145,12 +145,12 @@ export default function RestaurantPage() {
     fetchByCamis(camis)
       .then((r) => {
         setRestaurant(r);
-        if (r) document.title = `${r.dba} — alphabeats`;
+        if (r) document.title = `${r.dba} — eatsafe`;
       })
       .catch((e) => setError(String(e)))
       .finally(() => setLoading(false));
     return () => {
-      document.title = "alphabeats — NYC Restaurant Inspection Search";
+      document.title = "eatsafe — NYC Restaurant Inspection Search";
     };
   }, [camis]); // eslint-disable-line react-hooks/exhaustive-deps
 

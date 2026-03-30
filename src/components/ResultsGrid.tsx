@@ -127,7 +127,7 @@ export default function ResultsGrid({
             <button
               onClick={() =>
                 navigator.share({
-                  title: `alphabeats — ${items.length.toLocaleString()} ${itemLabel}${items.length !== 1 ? "s" : ""}`,
+                  title: `eatsafe — ${items.length.toLocaleString()} ${itemLabel}${items.length !== 1 ? "s" : ""}`,
                   url: window.location.href,
                 })
               }

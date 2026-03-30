@@ -28,4 +28,4 @@ jobs:
           echo "$SSH_KEY" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
           ssh-keyscan loganrosen.com >> ~/.ssh/known_hosts
-          rsync -avz --delete dist/ logan@loganrosen.com:/var/www/alphabeats/
+          rsync -avz --delete dist/ logan@loganrosen.com:/var/www/eatsafe/
