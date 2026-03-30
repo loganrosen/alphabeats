@@ -20,18 +20,19 @@ export function useYelpEnrichment(
       return;
     }
 
-    let cancelled = false;
+    let active = true;
+    setData(null);
     setLoading(true);
 
     fetchYelpEnrichment(name, address, city, zip).then((result) => {
-      if (!cancelled) {
+      if (active) {
         setData(result);
         setLoading(false);
       }
     });
 
     return () => {
-      cancelled = true;
+      active = false;
     };
   }, [name, address, city, zip]);
 

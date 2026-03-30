@@ -64,12 +64,12 @@ export async function fetchYelpEnrichment(
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, address, city, zip }),
       });
-      if (!res.ok) return null;
+      if (!res.ok) return null; // don't cache transport errors
       const data = (await res.json()) as YelpEnrichment | null;
-      saveToSession(key, data);
+      saveToSession(key, data); // cache both hits and Yelp-level misses
       return data;
     } catch {
-      return null;
+      return null; // don't cache network errors
     } finally {
       inFlightRequests.delete(key);
     }
