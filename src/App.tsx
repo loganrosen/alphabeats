@@ -358,8 +358,8 @@ export default function App() {
           >
             <img src="/icon-192.png" alt="" className="h-12 w-12 shrink-0" />
             <span className="font-sans font-bold text-3xl sm:text-4xl tracking-wide leading-none shrink-0">
-              <span className="text-zinc-800 dark:text-zinc-100">alphab</span>
-              <span className="text-yellow-500 dark:text-yellow-400">eats</span>
+              <span className="text-zinc-800 dark:text-zinc-100">eat</span>
+              <span className="text-yellow-500 dark:text-yellow-400">safe</span>
             </span>
           </button>
           <div className="flex items-center gap-3 shrink-0">
