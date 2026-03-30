@@ -2,7 +2,7 @@
 
 A better search interface for [NYC DOHMH restaurant inspection data](https://data.cityofnewyork.us/Health/DOHMH-New-York-City-Restaurant-Inspection-Results/43nn-pn8j).
 
-**[eatsafe.loganrosen.com](https://eatsafe.loganrosen.com)**
+**[eatsafe.nyc](https://eatsafe.nyc)**
 
 ## Features
 
@@ -28,4 +28,4 @@ npm run dev
 
 ## Deploy
 
-Pushes to `main` automatically deploy to [eatsafe.loganrosen.com](https://eatsafe.loganrosen.com) via GitHub Actions.
+Pushes to `main` automatically deploy to [eatsafe.nyc](https://eatsafe.nyc) via GitHub Actions.
