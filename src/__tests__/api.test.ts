@@ -38,9 +38,15 @@ beforeEach(() => {
   const store: Record<string, string> = {};
   vi.stubGlobal("sessionStorage", {
     getItem: (k: string) => store[k] ?? null,
-    setItem: (k: string, v: string) => { store[k] = v; },
-    removeItem: (k: string) => { delete store[k]; },
-    clear: () => { for (const k of Object.keys(store)) delete store[k]; },
+    setItem: (k: string, v: string) => {
+      store[k] = v;
+    },
+    removeItem: (k: string) => {
+      delete store[k];
+    },
+    clear: () => {
+      for (const k of Object.keys(store)) delete store[k];
+    },
   });
 });
 
@@ -267,9 +273,21 @@ describe("fetchCommunityBoards", () => {
 
   it("filters out rows with missing community_board_1 or neighborhoods", async () => {
     const rows = [
-      { community_board_1: "101", neighborhoods: "Tribeca", borough: "Manhattan" },
-      { community_board_1: undefined, neighborhoods: "Missing CB", borough: "Manhattan" },
-      { community_board_1: "102", neighborhoods: undefined, borough: "Manhattan" },
+      {
+        community_board_1: "101",
+        neighborhoods: "Tribeca",
+        borough: "Manhattan",
+      },
+      {
+        community_board_1: undefined,
+        neighborhoods: "Missing CB",
+        borough: "Manhattan",
+      },
+      {
+        community_board_1: "102",
+        neighborhoods: undefined,
+        borough: "Manhattan",
+      },
     ];
     mockFetch(rows);
     const result = await fetchCommunityBoards();
@@ -285,7 +303,11 @@ describe("fetchCommunityBoards", () => {
 
   it("handles rows with missing borough gracefully", async () => {
     const rows = [
-      { community_board_1: "101", neighborhoods: "Test Area", borough: undefined },
+      {
+        community_board_1: "101",
+        neighborhoods: "Test Area",
+        borough: undefined,
+      },
     ];
     mockFetch(rows);
     const result = await fetchCommunityBoards();
@@ -294,7 +316,11 @@ describe("fetchCommunityBoards", () => {
 
   it("returns cached data from sessionStorage on second call", async () => {
     const rows = [
-      { community_board_1: "101", neighborhoods: "Tribeca", borough: "Manhattan" },
+      {
+        community_board_1: "101",
+        neighborhoods: "Tribeca",
+        borough: "Manhattan",
+      },
     ];
     const mock = mockFetch(rows);
     const first = await fetchCommunityBoards();

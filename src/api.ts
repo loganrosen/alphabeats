@@ -1,6 +1,8 @@
-import { GRADE_ORDER } from "./gradeStyles.js";
 import type { GeoParams } from "./geo.js";
+import { GRADE_ORDER } from "./gradeStyles.js";
+
 export type { GeoParams } from "./geo.js";
+
 import { boundingBox, expandAddress, norm } from "./utils.js";
 
 const API = "https://data.cityofnewyork.us/resource/43nn-pn8j.json";
@@ -94,8 +96,8 @@ export async function fetchCommunityBoards(): Promise<CommunityBoard[]> {
   const result = rows
     .filter((r) => r.community_board_1 && r.neighborhoods)
     .map((r) => ({
-      code: r.community_board_1!,
-      label: r.neighborhoods!,
+      code: r.community_board_1 as string,
+      label: r.neighborhoods as string,
       borough: r.borough ?? "",
     }));
   sessionStorage.setItem(CACHE_KEY, JSON.stringify(result));

@@ -30,7 +30,7 @@ function abbrevInspType(type: string | undefined): string {
     return "Special";
   if (p.includes("admin")) return "Admin";
   if (p.includes("inspected")) return "Inspected";
-  return part.length > 14 ? part.slice(0, 12) + "…" : part;
+  return part.length > 14 ? `${part.slice(0, 12)}…` : part;
 }
 
 const categorizeViolation = (v: { code: string; desc: string }) =>
@@ -51,9 +51,11 @@ function InspectionRow({
     <div
       className={`rounded border ${isLatest ? "border-zinc-300 dark:border-zinc-600" : "border-zinc-200 dark:border-zinc-800"}`}
     >
-      <div
-        className={`flex flex-wrap items-center gap-x-2 gap-y-1 px-3 py-2 cursor-pointer select-none ${insp.violations.length > 0 ? "hover:bg-zinc-50 dark:hover:bg-zinc-900" : ""}`}
-        onClick={() => insp.violations.length > 0 && setOpen((o) => !o)}
+      <button
+        type="button"
+        disabled={insp.violations.length === 0}
+        className={`flex flex-wrap items-center gap-x-2 gap-y-1 px-3 py-2 w-full text-left select-none ${insp.violations.length > 0 ? "cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-900" : ""}`}
+        onClick={() => setOpen((o) => !o)}
       >
         <span
           className={`font-display text-base w-6 text-center shrink-0 ${GRADE_TEXT[grade ?? ""] ?? "text-zinc-400"}`}
@@ -86,7 +88,10 @@ function InspectionRow({
           {insp.violations.length > 0 && (
             <>
               <span className="text-xs">
-                <EmojiSet items={insp.violations} categorize={categorizeViolation} />
+                <EmojiSet
+                  items={insp.violations}
+                  categorize={categorizeViolation}
+                />
               </span>
               <span
                 className={`font-mono text-xs text-zinc-400 transition-transform ${open ? "rotate-90" : ""}`}
@@ -96,7 +101,7 @@ function InspectionRow({
             </>
           )}
         </div>
-      </div>
+      </button>
 
       {open && insp.violations.length > 0 && (
         <div className="px-3 pb-3 border-t border-zinc-100 dark:border-zinc-800 pt-2">
@@ -136,7 +141,9 @@ export default function RestaurantCard({
   );
   const trendArrow = (() => {
     if (scoredInspections.length < 2) return null;
-    const diff = scoredInspections[0].score! - scoredInspections[1].score!;
+    const diff =
+      (scoredInspections[0].score as number) -
+      (scoredInspections[1].score as number);
     if (diff < -1)
       return {
         arrow: "↓",
@@ -228,11 +235,14 @@ export default function RestaurantCard({
             {insp.score} pts
           </span>
         )}
-        {insp?.score != null && (!grade || grade === "P" || grade === "Z" || grade === "N") && (
-          <span className={`font-mono text-xs ${GRADE_TEXT[gradeForScore(insp.score)] ?? "text-zinc-400"}`}>
-            {gradeForScore(insp.score)} if graded
-          </span>
-        )}
+        {insp?.score != null &&
+          (!grade || grade === "P" || grade === "Z" || grade === "N") && (
+            <span
+              className={`font-mono text-xs ${GRADE_TEXT[gradeForScore(insp.score)] ?? "text-zinc-400"}`}
+            >
+              {gradeForScore(insp.score)} if graded
+            </span>
+          )}
         {trendArrow && (
           <span
             title={trendArrow.title}
@@ -254,6 +264,7 @@ export default function RestaurantCard({
       {allInspections.length > 0 && (
         <>
           <button
+            type="button"
             onClick={() => setHistoryOpen((o) => !o)}
             className="font-mono text-sm text-zinc-500 hover:text-zinc-900 transition-colors flex items-center gap-1.5 text-left cursor-pointer dark:text-zinc-400 dark:hover:text-zinc-100"
           >
@@ -266,7 +277,10 @@ export default function RestaurantCard({
             {allInspections.length !== 1 ? "S" : ""}
             {recentViolations.length > 0 && (
               <span className="flex items-center gap-0.5 ml-1">
-                <EmojiSet items={recentViolations} categorize={categorizeViolation} />
+                <EmojiSet
+                  items={recentViolations}
+                  categorize={categorizeViolation}
+                />
                 <span className="ml-0.5">
                   <InfoPopover align="left" direction="up">
                     <p className="text-xs text-zinc-600 dark:text-zinc-300 leading-relaxed">
@@ -280,8 +294,12 @@ export default function RestaurantCard({
 
           {historyOpen && (
             <div className="flex flex-col gap-1.5">
-              {allInspections.map((i, idx) => (
-                <InspectionRow key={idx} insp={i} isLatest={i === insp} />
+              {allInspections.map((i) => (
+                <InspectionRow
+                  key={`${i.date ?? "nodate"}-${i.grade ?? "none"}`}
+                  insp={i}
+                  isLatest={i === insp}
+                />
               ))}
             </div>
           )}

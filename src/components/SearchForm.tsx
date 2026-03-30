@@ -62,7 +62,7 @@ function CommunityBoardCombobox({
   function shortLabel(label: string) {
     const parts = label.split(/,\s*/);
     if (parts.length <= 2) return label;
-    return parts.slice(0, 2).join(", ") + "…";
+    return `${parts.slice(0, 2).join(", ")}…`;
   }
 
   function highlight(text: string, q: string) {
@@ -176,8 +176,11 @@ export default function SearchForm({
       {/* Primary row: Name, Cuisine, Borough, Search, Near Me, Clear */}
       <div className="grid grid-cols-[2fr_1.5fr_1.2fr_auto] gap-3 max-w-6xl items-end max-[800px]:grid-cols-1">
         <div className="flex flex-col gap-1.5">
-          <label className={labelCls}>Restaurant Name</label>
+          <label htmlFor="search-name" className={labelCls}>
+            Restaurant Name
+          </label>
           <input
+            id="search-name"
             className={inputCls}
             value={values.name}
             onChange={set("name")}
@@ -186,7 +189,7 @@ export default function SearchForm({
           />
         </div>
         <div className="flex flex-col gap-1.5">
-          <label className={labelCls}>Cuisine</label>
+          <span className={labelCls}>Cuisine</span>
           <CuisineCombobox
             value={values.cuisine}
             onChange={(v) => onChange((prev) => ({ ...prev, cuisine: v }))}
@@ -194,7 +197,7 @@ export default function SearchForm({
           />
         </div>
         <div className="flex flex-col gap-1.5">
-          <label className={labelCls}>Borough</label>
+          <span className={labelCls}>Borough</span>
           <BoroughFilter
             value={values.boro}
             onChange={(boro) => onChange((prev) => ({ ...prev, boro, cb: "" }))}
@@ -202,6 +205,7 @@ export default function SearchForm({
         </div>
         <div className="flex items-end gap-2">
           <button
+            type="button"
             onClick={onSearch}
             disabled={loading}
             className="font-mono text-sm tracking-widest bg-yellow-400 text-zinc-950 px-6 py-2.5 rounded-md cursor-pointer hover:bg-yellow-300 disabled:opacity-40 disabled:cursor-not-allowed transition-colors whitespace-nowrap"
@@ -209,6 +213,7 @@ export default function SearchForm({
             {loading ? "…" : "SEARCH"}
           </button>
           <button
+            type="button"
             onClick={onClear}
             className="font-mono text-sm tracking-widest text-zinc-600 border border-zinc-300 px-4 py-2.5 rounded-md cursor-pointer hover:text-zinc-900 hover:border-zinc-500 transition-colors whitespace-nowrap dark:text-zinc-300 dark:border-zinc-600 dark:hover:text-white dark:hover:border-zinc-400"
           >
@@ -245,8 +250,11 @@ export default function SearchForm({
       {showAdvanced && (
         <div className="grid grid-cols-[1.5fr_0.8fr_1.2fr_0.8fr] gap-3 max-w-6xl mt-3 items-end max-[800px]:grid-cols-1">
           <div className="flex flex-col gap-1.5">
-            <label className={labelCls}>Street Address</label>
+            <label htmlFor="search-address" className={labelCls}>
+              Street Address
+            </label>
             <input
+              id="search-address"
               className={inputCls}
               value={values.address}
               onChange={set("address")}
@@ -255,8 +263,11 @@ export default function SearchForm({
             />
           </div>
           <div className="flex flex-col gap-1.5">
-            <label className={labelCls}>Zip Code</label>
+            <label htmlFor="search-zip" className={labelCls}>
+              Zip Code
+            </label>
             <input
+              id="search-zip"
               className={inputCls}
               value={values.zip}
               onChange={set("zip")}
@@ -266,7 +277,7 @@ export default function SearchForm({
             />
           </div>
           <div className="flex flex-col gap-1.5 relative">
-            <label className={labelCls}>Neighborhood</label>
+            <span className={labelCls}>Neighborhood</span>
             <CommunityBoardCombobox
               value={values.cb}
               onChange={(code) => onChange((prev) => ({ ...prev, cb: code }))}
@@ -275,7 +286,7 @@ export default function SearchForm({
             />
           </div>
           <div className="flex flex-col gap-1.5">
-            <label className={labelCls}>Grade</label>
+            <span className={labelCls}>Grade</span>
             <GradeFilter
               value={values.grade}
               onChange={(grade) => onChange((prev) => ({ ...prev, grade }))}

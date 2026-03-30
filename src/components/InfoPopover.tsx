@@ -57,7 +57,11 @@ export default function InfoPopover({
   return (
     <div ref={ref} className="relative inline-flex items-center">
       <button
-        onClick={(e) => { e.stopPropagation(); setOpen((o) => !o); }}
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          setOpen((o) => !o);
+        }}
         aria-label="Grading info"
         className="w-4 h-4 rounded-full border border-zinc-400 dark:border-zinc-500 text-zinc-400 dark:text-zinc-500 hover:border-yellow-500 hover:text-yellow-500 dark:hover:border-yellow-400 dark:hover:text-yellow-400 transition-colors flex items-center justify-center text-[10px] font-bold leading-none font-sans cursor-pointer"
       >

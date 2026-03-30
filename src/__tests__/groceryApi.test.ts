@@ -1,17 +1,17 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
-  generateStoreId,
-  parseStoreId,
-  getEstablishmentTypeLabel,
-  groupGroceryRows,
-  searchGroceries,
-  fetchGroceryById,
-  COUNTY_TO_BOROUGH,
   BOROUGH_TO_COUNTY,
-  NYC_COUNTIES,
+  COUNTY_TO_BOROUGH,
   ESTABLISHMENT_TYPES,
+  fetchGroceryById,
   type GroceryApiRow,
   type GrocerySearchParams,
+  generateStoreId,
+  getEstablishmentTypeLabel,
+  groupGroceryRows,
+  NYC_COUNTIES,
+  parseStoreId,
+  searchGroceries,
 } from "../groceryApi.js";
 
 const EMPTY: GrocerySearchParams = {
@@ -180,8 +180,7 @@ describe("groupGroceryRows", () => {
       }),
     ];
     const result = groupGroceryRows(rows);
-    const inspection =
-      result[0].inspections["2024-06-01T00:00:00.000"];
+    const inspection = result[0].inspections["2024-06-01T00:00:00.000"];
     expect(inspection.deficiencies).toHaveLength(2);
     expect(inspection.deficiencies[0].number).toBe("1");
     expect(inspection.deficiencies[1].number).toBe("2");
@@ -195,8 +194,7 @@ describe("groupGroceryRows", () => {
       }),
     ];
     const result = groupGroceryRows(rows);
-    const inspection =
-      result[0].inspections["2024-06-15T00:00:00.000"];
+    const inspection = result[0].inspections["2024-06-15T00:00:00.000"];
     expect(inspection.deficiencies).toHaveLength(0);
   });
 
@@ -370,10 +368,10 @@ describe("Constants", () => {
   });
 
   it("ESTABLISHMENT_TYPES includes expected entries", () => {
-    expect(ESTABLISHMENT_TYPES["A"]).toBe("Store");
-    expect(ESTABLISHMENT_TYPES["B"]).toBe("Bakery");
-    expect(ESTABLISHMENT_TYPES["C"]).toBe("Food Mfr");
-    expect(ESTABLISHMENT_TYPES["D"]).toBe("Warehouse");
+    expect(ESTABLISHMENT_TYPES.A).toBe("Store");
+    expect(ESTABLISHMENT_TYPES.B).toBe("Bakery");
+    expect(ESTABLISHMENT_TYPES.C).toBe("Food Mfr");
+    expect(ESTABLISHMENT_TYPES.D).toBe("Warehouse");
     expect(Object.keys(ESTABLISHMENT_TYPES).length).toBeGreaterThanOrEqual(19);
   });
 });
@@ -504,7 +502,7 @@ describe("fetchGroceryById", () => {
     expect(where).toContain("upper(street)=");
     expect(where).toContain("zipcode='11201'");
     expect(result).not.toBeNull();
-    expect(result!.tradeName).toBe("TEST STORE");
+    expect(result?.tradeName).toBe("TEST STORE");
   });
 
   it("returns null when no rows are returned", async () => {
@@ -534,28 +532,49 @@ import { deficiencyCategory } from "../deficiencyCategory.js";
 
 describe("deficiencyCategory", () => {
   it("maps temperature codes", () => {
-    expect(deficiencyCategory("06A")).toEqual({ emoji: "🌡️", label: "Cooling & refrigeration" });
-    expect(deficiencyCategory("06B")).toEqual({ emoji: "🌡️", label: "Cooling & refrigeration" });
+    expect(deficiencyCategory("06A")).toEqual({
+      emoji: "🌡️",
+      label: "Cooling & refrigeration",
+    });
+    expect(deficiencyCategory("06B")).toEqual({
+      emoji: "🌡️",
+      label: "Cooling & refrigeration",
+    });
   });
 
   it("maps pest/contamination codes", () => {
-    expect(deficiencyCategory("02A")).toEqual({ emoji: "🐀", label: "Adulterated food" });
+    expect(deficiencyCategory("02A")).toEqual({
+      emoji: "🐀",
+      label: "Adulterated food",
+    });
   });
 
   it("maps pest activity codes", () => {
-    expect(deficiencyCategory("14A")).toEqual({ emoji: "🪳", label: "Pest activity" });
+    expect(deficiencyCategory("14A")).toEqual({
+      emoji: "🪳",
+      label: "Pest activity",
+    });
   });
 
   it("maps building maintenance codes", () => {
-    expect(deficiencyCategory("10B")).toEqual({ emoji: "🏚️", label: "Building maintenance" });
+    expect(deficiencyCategory("10B")).toEqual({
+      emoji: "🏚️",
+      label: "Building maintenance",
+    });
   });
 
   it("maps cross-contamination codes", () => {
-    expect(deficiencyCategory("04F")).toEqual({ emoji: "⚠️", label: "Cross-contamination" });
+    expect(deficiencyCategory("04F")).toEqual({
+      emoji: "⚠️",
+      label: "Cross-contamination",
+    });
   });
 
   it("maps cleanliness codes", () => {
-    expect(deficiencyCategory("09A")).toEqual({ emoji: "🚰", label: "Sanitary facilities" });
+    expect(deficiencyCategory("09A")).toEqual({
+      emoji: "🚰",
+      label: "Sanitary facilities",
+    });
   });
 
   it("returns default for unknown codes", () => {

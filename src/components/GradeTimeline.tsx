@@ -23,7 +23,11 @@ export default function GradeTimeline({ inspections, onSelect }: Props) {
 
   const pts = inspections
     .filter((i) => i.date)
-    .sort((a, b) => new Date(a.date!).getTime() - new Date(b.date!).getTime());
+    .sort(
+      (a, b) =>
+        new Date(a.date as string).getTime() -
+        new Date(b.date as string).getTime(),
+    );
 
   if (pts.length < 2) return null;
 
@@ -41,12 +45,12 @@ export default function GradeTimeline({ inspections, onSelect }: Props) {
   const chartW = W - PAD_LEFT - PAD_RIGHT;
   const chartH = H - PAD_TOP - PAD_BOTTOM;
 
-  const minDate = new Date(pts[0].date!).getTime();
-  const maxDate = new Date(pts[pts.length - 1].date!).getTime();
+  const minDate = new Date(pts[0].date as string).getTime();
+  const maxDate = new Date(pts[pts.length - 1].date as string).getTime();
   const dateRange = maxDate - minDate || 1;
 
   const maxScore = Math.max(
-    ...(hasScores ? scoredPts.map((i) => i.score!) : []),
+    ...(hasScores ? scoredPts.map((i) => i.score as number) : []),
     28,
   );
   const scoreMax = Math.ceil(maxScore / 5) * 5;
@@ -55,7 +59,8 @@ export default function GradeTimeline({ inspections, onSelect }: Props) {
 
   function xOf(i: Inspection) {
     return (
-      PAD_LEFT + ((new Date(i.date!).getTime() - minDate) / dateRange) * chartW
+      PAD_LEFT +
+      ((new Date(i.date as string).getTime() - minDate) / dateRange) * chartW
     );
   }
   function yOf(score: number) {
@@ -64,8 +69,8 @@ export default function GradeTimeline({ inspections, onSelect }: Props) {
   }
 
   // X-axis: year ticks
-  const minYear = new Date(pts[0].date!).getFullYear();
-  const maxYear = new Date(pts[pts.length - 1].date!).getFullYear();
+  const minYear = new Date(pts[0].date as string).getFullYear();
+  const maxYear = new Date(pts[pts.length - 1].date as string).getFullYear();
   const yearTicks: number[] = [];
   for (let y = minYear; y <= maxYear; y++) yearTicks.push(y);
   // Thin out if too many
@@ -86,8 +91,10 @@ export default function GradeTimeline({ inspections, onSelect }: Props) {
   const areaPath =
     scoredPts.length >= 2
       ? [
-          `M ${xOf(scoredPts[0])} ${yOf(scoredPts[0].score!)}`,
-          ...scoredPts.slice(1).map((i) => `L ${xOf(i)} ${yOf(i.score!)}`),
+          `M ${xOf(scoredPts[0])} ${yOf(scoredPts[0].score as number)}`,
+          ...scoredPts
+            .slice(1)
+            .map((i) => `L ${xOf(i)} ${yOf(i.score as number)}`),
           `L ${xOf(scoredPts[scoredPts.length - 1])} ${PAD_TOP + chartH}`,
           `L ${xOf(scoredPts[0])} ${PAD_TOP + chartH}`,
           "Z",
@@ -96,8 +103,10 @@ export default function GradeTimeline({ inspections, onSelect }: Props) {
   const linePath =
     scoredPts.length >= 2
       ? [
-          `M ${xOf(scoredPts[0])} ${yOf(scoredPts[0].score!)}`,
-          ...scoredPts.slice(1).map((i) => `L ${xOf(i)} ${yOf(i.score!)}`),
+          `M ${xOf(scoredPts[0])} ${yOf(scoredPts[0].score as number)}`,
+          ...scoredPts
+            .slice(1)
+            .map((i) => `L ${xOf(i)} ${yOf(i.score as number)}`),
         ].join(" ")
       : null;
 
@@ -140,6 +149,8 @@ export default function GradeTimeline({ inspections, onSelect }: Props) {
         <svg
           viewBox={`0 0 ${W} ${H}`}
           className="w-full block"
+          role="img"
+          aria-label="Grade history chart"
           onMouseLeave={() => setHovered(null)}
         >
           {/* Grade bands */}
@@ -312,8 +323,10 @@ export default function GradeTimeline({ inspections, onSelect }: Props) {
             const gradeLabel =
               GRADE_DISPLAY[insp.grade ?? ""] ?? insp.grade ?? "";
             return (
+              // biome-ignore lint/a11y/useSemanticElements: SVG <g> has no semantic interactive equivalent
               <g
-                key={i}
+                key={insp.date as string}
+                role="button"
                 onMouseEnter={() => setHovered(i)}
                 onClick={() => insp.date && onSelect?.(insp.date)}
                 style={{ cursor: "pointer" }}

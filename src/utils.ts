@@ -43,7 +43,7 @@ export function expandAddress(input: string): string[] {
 export function fmtDate(d: string | undefined | null): string {
   if (!d) return "—";
   const dt = new Date(d);
-  if (isNaN(dt.getTime()) || dt.getFullYear() < 2000) return "—";
+  if (Number.isNaN(dt.getTime()) || dt.getFullYear() < 2000) return "—";
   return dt.toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
@@ -55,7 +55,7 @@ export function fmtDate(d: string | undefined | null): string {
 export function fmtRelativeAge(d: string | undefined | null): string | null {
   if (!d) return null;
   const dt = new Date(d);
-  if (isNaN(dt.getTime()) || dt.getFullYear() < 2000) return null;
+  if (Number.isNaN(dt.getTime()) || dt.getFullYear() < 2000) return null;
   const months = Math.floor(
     (Date.now() - dt.getTime()) / (1000 * 60 * 60 * 24 * 30.44),
   );
@@ -114,7 +114,7 @@ export function inspectionStalenessClass(
 ): string {
   if (!d) return base;
   const dt = new Date(d);
-  if (isNaN(dt.getTime())) return base;
+  if (Number.isNaN(dt.getTime())) return base;
   const months = (Date.now() - dt.getTime()) / (1000 * 60 * 60 * 24 * 30.44);
   if (months >= 24) return "text-red-500 dark:text-red-400";
   if (months >= 12) return "text-amber-500 dark:text-amber-400";

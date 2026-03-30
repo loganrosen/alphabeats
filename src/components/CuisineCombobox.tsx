@@ -56,7 +56,6 @@ export default function CuisineCombobox({
   return (
     <div
       className={`flex flex-wrap gap-1.5 items-center min-h-[2.75rem] px-2 py-1.5 bg-white border border-zinc-300 rounded-md focus-within:border-yellow-500 transition-colors dark:bg-zinc-950 dark:border-zinc-600 dark:focus-within:border-yellow-400 cursor-text ${className ?? ""}`}
-      onClick={() => inputRef.current?.focus()}
     >
       {selected.map((c) => (
         <span

@@ -11,11 +11,11 @@ export default function ViolationList({
   );
   return (
     <div className="flex flex-col gap-2 mt-1">
-      {sorted.map((v, i) => {
+      {sorted.map((v) => {
         const { emoji, label } = violationCategory(v.code, v.desc);
         return (
           <div
-            key={i}
+            key={v.code}
             className={`text-sm pl-3 border-l-2 leading-relaxed ${v.critical ? "border-red-500 text-zinc-800 dark:text-zinc-100" : "border-zinc-300 text-zinc-600 dark:border-zinc-700 dark:text-zinc-300"}`}
           >
             <div className="font-mono text-xs text-yellow-600 mb-0.5 dark:text-yellow-400">

@@ -8,6 +8,7 @@ const CROSSHAIR_ICON = (
     strokeWidth="2"
     strokeLinecap="round"
     strokeLinejoin="round"
+    aria-hidden="true"
   >
     <circle cx="12" cy="12" r="10" />
     <circle cx="12" cy="12" r="3" />
@@ -51,6 +52,7 @@ export default function NearMeSection({
         </button>
       ) : (
         <button
+          type="button"
           onClick={onLocate}
           disabled={loading || status === "loading"}
           className="font-mono text-sm tracking-widest text-zinc-600 border border-zinc-300 px-4 py-2 rounded-md cursor-pointer hover:text-zinc-900 hover:border-zinc-500 transition-colors whitespace-nowrap dark:text-zinc-300 dark:border-zinc-600 dark:hover:text-white dark:hover:border-zinc-400 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"

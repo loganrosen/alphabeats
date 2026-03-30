@@ -1,11 +1,19 @@
 import type { GeoParams } from "./geo.js";
+
 export type { GeoParams } from "./geo.js";
+
 import { GRADE_ORDER } from "./gradeStyles.js";
 import { expandAddress, norm } from "./utils.js";
 
 const API = "https://data.ny.gov/resource/d6dy-3h7r.json";
 
-export const NYC_COUNTIES = ["New York", "Kings", "Queens", "Bronx", "Richmond"];
+export const NYC_COUNTIES = [
+  "New York",
+  "Kings",
+  "Queens",
+  "Bronx",
+  "Richmond",
+];
 
 export const COUNTY_TO_BOROUGH: Record<string, string> = {
   "New York": "Manhattan",
@@ -144,9 +152,7 @@ export async function searchGroceries(
   const conditions: string[] = [];
 
   // Always filter to NYC counties and establishment type containing 'A' (Store)
-  conditions.push(
-    `county IN (${NYC_COUNTIES.map((c) => `'${c}'`).join(",")})`,
-  );
+  conditions.push(`county IN (${NYC_COUNTIES.map((c) => `'${c}'`).join(",")})`);
   conditions.push(`establishment_type LIKE '%A%'`);
 
   if (params.name) {
@@ -166,9 +172,7 @@ export async function searchGroceries(
     if (counties.length === 1) {
       conditions.push(`county='${counties[0]}'`);
     } else if (counties.length > 1) {
-      conditions.push(
-        `(${counties.map((c) => `county='${c}'`).join(" OR ")})`,
-      );
+      conditions.push(`(${counties.map((c) => `county='${c}'`).join(" OR ")})`);
     }
   }
 
@@ -176,9 +180,7 @@ export async function searchGroceries(
 
   if (params.address) {
     for (const token of expandAddress(params.address)) {
-      conditions.push(
-        `upper(street) like '%${token.replace(/'/g, "''")}%'`,
-      );
+      conditions.push(`upper(street) like '%${token.replace(/'/g, "''")}%'`);
     }
   }
 

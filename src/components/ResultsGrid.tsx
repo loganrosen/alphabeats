@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
+import type { DatasetMode } from "../App.js";
 import type { Restaurant } from "../api.js";
 import type { Grocery } from "../groceryApi.js";
-import type { DatasetMode } from "../App.js";
+import GroceryCard from "./GroceryCard.js";
 import MapView from "./MapView.js";
 import RestaurantCard from "./RestaurantCard.js";
-import GroceryCard from "./GroceryCard.js";
 
 interface SearchResult {
   status: "idle" | "loading" | "done" | "error";
@@ -73,7 +73,10 @@ function applySortKeyGrocery(list: Grocery[], key: SortKey): Grocery[] {
 export default function ResultsGrid({
   result,
   mode,
-}: { result: SearchResult; mode: DatasetMode }) {
+}: {
+  result: SearchResult;
+  mode: DatasetMode;
+}) {
   const { status, restaurants, groceries, hitLimit, totalRows, error } = result;
   const isGrocery = mode === "grocery";
   const items = isGrocery ? groceries : restaurants;
@@ -125,6 +128,7 @@ export default function ResultsGrid({
           </span>
           {"share" in navigator && (
             <button
+              type="button"
               onClick={() =>
                 navigator.share({
                   title: `eatsafe — ${items.length.toLocaleString()} ${itemLabel}${items.length !== 1 ? "s" : ""}`,
@@ -143,6 +147,7 @@ export default function ResultsGrid({
                 strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
+                aria-hidden="true"
               >
                 <circle cx="18" cy="5" r="3" />
                 <circle cx="6" cy="12" r="3" />
@@ -167,14 +172,13 @@ export default function ResultsGrid({
           >
             {hasDistance && <option value="distance">Distance</option>}
             <option value="grade">Grade</option>
-            {!isGrocery && (
-              <option value="score">Violation points ↓</option>
-            )}
+            {!isGrocery && <option value="score">Violation points ↓</option>}
             <option value="recent">Most recent</option>
             <option value="name">Name</option>
           </select>
           <div className="flex rounded overflow-hidden border border-zinc-300 dark:border-zinc-700 text-xs font-mono">
             <button
+              type="button"
               onClick={() => setView("list")}
               className={`px-3 py-1.5 cursor-pointer transition-colors flex items-center gap-1.5 ${view === "list" ? "bg-zinc-900 text-zinc-100 dark:bg-zinc-100 dark:text-zinc-900" : "bg-white text-zinc-500 hover:text-zinc-800 dark:bg-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100"}`}
             >
@@ -185,6 +189,7 @@ export default function ResultsGrid({
                 fill="none"
                 stroke="currentColor"
                 strokeWidth="1.5"
+                aria-hidden="true"
               >
                 <line x1="1" y1="3" x2="11" y2="3" />
                 <line x1="1" y1="6" x2="11" y2="6" />
@@ -193,6 +198,7 @@ export default function ResultsGrid({
               List
             </button>
             <button
+              type="button"
               onClick={() => setView("map")}
               className={`px-3 py-1.5 cursor-pointer transition-colors flex items-center gap-1.5 border-l border-zinc-300 dark:border-zinc-700 ${view === "map" ? "bg-zinc-900 text-zinc-100 dark:bg-zinc-100 dark:text-zinc-900" : "bg-white text-zinc-500 hover:text-zinc-800 dark:bg-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100"}`}
             >
@@ -203,6 +209,7 @@ export default function ResultsGrid({
                 fill="none"
                 stroke="currentColor"
                 strokeWidth="1.5"
+                aria-hidden="true"
               >
                 <polygon points="1,9 4,2 7,6 9,4 11,9" />
                 <circle cx="9" cy="3.5" r="1.5" />

@@ -9,17 +9,17 @@ import {
   type SearchParams,
   searchRestaurants,
 } from "./api.js";
+import GrocerySearchForm from "./components/GrocerySearchForm.js";
+import ResultsGrid from "./components/ResultsGrid.js";
+import SearchForm from "./components/SearchForm.js";
 import {
   type Grocery,
   type GrocerySearchParams,
   groupGroceryRows,
   searchGroceries,
 } from "./groceryApi.js";
-import ResultsGrid from "./components/ResultsGrid.js";
-import SearchForm from "./components/SearchForm.js";
-import GrocerySearchForm from "./components/GrocerySearchForm.js";
-import { type Theme, useTheme } from "./useTheme.js";
 import { useGeolocation } from "./useGeolocation.js";
+import { type Theme, useTheme } from "./useTheme.js";
 import { haversineDistance } from "./utils.js";
 
 export type DatasetMode = "restaurant" | "grocery";
@@ -65,22 +65,24 @@ function readParams(): {
   geo: GeoParams | null;
 } {
   const p = new URLSearchParams(window.location.search);
-  const mode = (p.get("mode") === "grocery" ? "grocery" : "restaurant") as DatasetMode;
+  const mode = (
+    p.get("mode") === "grocery" ? "grocery" : "restaurant"
+  ) as DatasetMode;
   const form: SearchParams = {
     name: p.get("name") ?? "",
-    boro: p.get("boro") ? p.get("boro")!.split(",") : [],
+    boro: p.get("boro")?.split(",") ?? [],
     address: p.get("address") ?? "",
     zip: p.get("zip") ?? "",
     cuisine: p.get("cuisine") ?? "",
-    grade: p.get("grade") ? p.get("grade")!.split(",") : [],
+    grade: p.get("grade")?.split(",") ?? [],
     cb: p.get("cb") ?? "",
   };
   const groceryForm: GrocerySearchParams = {
     name: p.get("name") ?? "",
-    boro: p.get("boro") ? p.get("boro")!.split(",") : [],
+    boro: p.get("boro")?.split(",") ?? [],
     address: p.get("address") ?? "",
     zip: p.get("zip") ?? "",
-    grade: p.get("grade") ? p.get("grade")!.split(",") : [],
+    grade: p.get("grade")?.split(",") ?? [],
   };
   const rawLat = p.get("lat");
   const rawLng = p.get("lng");
@@ -102,7 +104,19 @@ function writeParams(
 ): void {
   const url = new URL(window.location.href);
   // Clear all search-related params first
-  for (const k of ["name", "boro", "address", "zip", "cuisine", "grade", "cb", "mode", "lat", "lng", "radius"]) {
+  for (const k of [
+    "name",
+    "boro",
+    "address",
+    "zip",
+    "cuisine",
+    "grade",
+    "cb",
+    "mode",
+    "lat",
+    "lng",
+    "radius",
+  ]) {
     url.searchParams.delete(k);
   }
   if (mode === "grocery") url.searchParams.set("mode", "grocery");
@@ -126,6 +140,22 @@ const THEME_OPTIONS: { value: Theme; label: string }[] = [
   { value: "dark", label: "☾" },
 ];
 
+function hasQuery(
+  values: SearchParams | GrocerySearchParams,
+  geo?: GeoParams | null,
+): boolean {
+  return (
+    geo != null ||
+    values.name !== "" ||
+    values.address !== "" ||
+    values.zip !== "" ||
+    ("cuisine" in values && values.cuisine !== "") ||
+    ("cb" in values && values.cb !== "") ||
+    values.boro.length > 0 ||
+    values.grade.length > 0
+  );
+}
+
 export default function App() {
   const [mode, setMode] = useState<DatasetMode>(() => readParams().mode);
   const [form, setForm] = useState<SearchParams>(() => readParams().form);
@@ -148,16 +178,6 @@ export default function App() {
     fetchCuisines().then(setCuisines);
     fetchCommunityBoards().then(setCommunityBoards);
   }, []);
-
-  const hasQuery = (values: SearchParams | GrocerySearchParams, geo?: GeoParams | null) =>
-    geo != null ||
-    values.name !== "" ||
-    values.address !== "" ||
-    values.zip !== "" ||
-    ("cuisine" in values && values.cuisine !== "") ||
-    ("cb" in values && values.cb !== "") ||
-    values.boro.length > 0 ||
-    values.grade.length > 0;
 
   const resultsRef = useRef<HTMLDivElement>(null);
 
@@ -212,8 +232,8 @@ export default function App() {
                 distance: haversineDistance(
                   geoResult.lat,
                   geoResult.lng,
-                  g.lat!,
-                  g.lng!,
+                  g.lat as number,
+                  g.lng as number,
                 ),
               }))
               .sort((a, b) => (a.distance ?? 0) - (b.distance ?? 0));
@@ -246,8 +266,8 @@ export default function App() {
                 distance: haversineDistance(
                   geoResult.lat,
                   geoResult.lng,
-                  r.lat!,
-                  r.lng!,
+                  r.lat as number,
+                  r.lng as number,
                 ),
               }))
               .sort((a, b) => (a.distance ?? 0) - (b.distance ?? 0));
@@ -277,7 +297,12 @@ export default function App() {
 
   // Restore state from URL on mount
   useEffect(() => {
-    const { mode: urlMode, form: urlForm, groceryForm: urlGroceryForm, geo: urlGeo } = readParams();
+    const {
+      mode: urlMode,
+      form: urlForm,
+      groceryForm: urlGroceryForm,
+      geo: urlGeo,
+    } = readParams();
     setMode(urlMode);
     if (urlMode === "grocery") {
       if (hasQuery(urlGroceryForm, urlGeo)) {
@@ -298,7 +323,7 @@ export default function App() {
         doSearch(urlMode, urlForm, urlGeo, true);
       }
     }
-  }, [doSearch]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [doSearch]);
 
   const handleClear = () => {
     if (mode === "grocery") {
@@ -345,7 +370,7 @@ export default function App() {
       const currentForm = mode === "grocery" ? groceryForm : form;
       doSearch(mode, currentForm, newGeo);
     }
-  }, [geo]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [geo, doSearch, mode, form, groceryForm, nearbyRadius]);
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-zinc-50 text-zinc-900 font-sans dark:bg-zinc-950 dark:text-zinc-100">
@@ -368,6 +393,7 @@ export default function App() {
               {THEME_OPTIONS.map((opt) => (
                 <button
                   key={opt.value}
+                  type="button"
                   onClick={() => setTheme(opt.value)}
                   className={`px-3 py-1.5 cursor-pointer transition-colors
                     ${
@@ -412,6 +438,7 @@ export default function App() {
         {/* Dataset tabs — full-width, prominent */}
         <div className="flex border-t border-zinc-200 dark:border-zinc-800">
           <button
+            type="button"
             onClick={() => handleModeChange("restaurant")}
             className={`flex-1 py-2.5 font-mono text-sm tracking-wide cursor-pointer transition-colors relative
               ${
@@ -426,6 +453,7 @@ export default function App() {
             )}
           </button>
           <button
+            type="button"
             onClick={() => handleModeChange("grocery")}
             className={`flex-1 py-2.5 font-mono text-sm tracking-wide cursor-pointer transition-colors relative
               ${

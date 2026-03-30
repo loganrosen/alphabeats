@@ -1,12 +1,17 @@
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-import type { Grocery, GroceryInspection } from "../groceryApi.js";
-import { fetchGroceryById } from "../groceryApi.js";
-import { deficiencyCategory } from "../deficiencyCategory.js";
-import { GRADE_COLOR, GRADE_LABEL, GRADE_TEXT } from "../gradeStyles.js";
 import GradeBadge from "../components/GradeBadge.js";
 import MiniMap from "../components/MiniMap.js";
-import { fmtDate, fmtRelativeAge, inspectionStalenessClass, norm } from "../utils.js";
+import { deficiencyCategory } from "../deficiencyCategory.js";
+import { GRADE_COLOR, GRADE_LABEL, GRADE_TEXT } from "../gradeStyles.js";
+import type { Grocery, GroceryInspection } from "../groceryApi.js";
+import { fetchGroceryById } from "../groceryApi.js";
+import {
+  fmtDate,
+  fmtRelativeAge,
+  inspectionStalenessClass,
+  norm,
+} from "../utils.js";
 
 function InspectionSection({
   insp,
@@ -51,12 +56,19 @@ function InspectionSection({
       </div>
       {insp.deficiencies.length > 0 ? (
         <ul className="flex flex-col gap-2">
-          {insp.deficiencies.map((d, i) => {
+          {insp.deficiencies.map((d) => {
             const cat = deficiencyCategory(d.number);
             return (
-              <li key={i} className="font-mono text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
-                <span className="mr-1" title={cat.label}>{cat.emoji}</span>
-                <span className="text-zinc-400 dark:text-zinc-500 mr-1.5">#{d.number}</span>
+              <li
+                key={`${d.number}-${d.description?.slice(0, 30)}`}
+                className="font-mono text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed"
+              >
+                <span className="mr-1" title={cat.label}>
+                  {cat.emoji}
+                </span>
+                <span className="text-zinc-400 dark:text-zinc-500 mr-1.5">
+                  #{d.number}
+                </span>
                 {d.description}
               </li>
             );
@@ -81,7 +93,7 @@ function GradeTimelineSVG({
   const graded = inspections.filter((i) => i.date && i.grade);
   if (graded.length < 2) return null;
 
-  const dates = graded.map((i) => new Date(i.date!).getTime());
+  const dates = graded.map((i) => new Date(i.date as string).getTime());
   const minTime = Math.min(...dates);
   const maxTime = Math.max(...dates);
   const span = maxTime - minTime || 1;
@@ -97,42 +109,80 @@ function GradeTimelineSVG({
   for (let y = minYear; y <= maxYear + 1; y++) {
     const t = new Date(y, 0, 1).getTime();
     if (t >= minTime && t <= maxTime) {
-      yearTicks.push({ x: pad + ((t - minTime) / span) * innerW, label: String(y) });
+      yearTicks.push({
+        x: pad + ((t - minTime) / span) * innerW,
+        label: String(y),
+      });
     }
   }
 
   return (
     <div className="mb-8">
-      <svg viewBox="0 0 600 80" className="w-full" role="img" aria-label="Grade timeline">
+      <svg
+        viewBox="0 0 600 80"
+        className="w-full"
+        role="img"
+        aria-label="Grade timeline"
+      >
         {/* Axis line */}
-        <line x1={pad} y1={40} x2={w - pad} y2={40} stroke="currentColor" strokeOpacity={0.15} strokeWidth={1} />
+        <line
+          x1={pad}
+          y1={40}
+          x2={w - pad}
+          y2={40}
+          stroke="currentColor"
+          strokeOpacity={0.15}
+          strokeWidth={1}
+        />
 
         {/* Year ticks */}
         {yearTicks.map((tick) => (
           <g key={tick.label}>
-            <line x1={tick.x} y1={35} x2={tick.x} y2={45} stroke="currentColor" strokeOpacity={0.15} strokeWidth={1} />
-            <text x={tick.x} y={65} textAnchor="middle" className="fill-zinc-400 dark:fill-zinc-500" style={{ fontSize: 10, fontFamily: "monospace" }}>
+            <line
+              x1={tick.x}
+              y1={35}
+              x2={tick.x}
+              y2={45}
+              stroke="currentColor"
+              strokeOpacity={0.15}
+              strokeWidth={1}
+            />
+            <text
+              x={tick.x}
+              y={65}
+              textAnchor="middle"
+              className="fill-zinc-400 dark:fill-zinc-500"
+              style={{ fontSize: 10, fontFamily: "monospace" }}
+            >
               {tick.label}
             </text>
           </g>
         ))}
 
         {/* Grade markers */}
-        {graded.map((insp, i) => {
-          const t = new Date(insp.date!).getTime();
+        {graded.map((insp) => {
+          const t = new Date(insp.date as string).getTime();
           const x = pad + ((t - minTime) / span) * innerW;
-          const color = GRADE_COLOR[insp.grade!] ?? "#a1a1aa";
+          const color = GRADE_COLOR[insp.grade as string] ?? "#a1a1aa";
           return (
+            // biome-ignore lint/a11y/noStaticElementInteractions: SVG chart marker has no interactive semantic equivalent
             <g
-              key={i}
-              onClick={() => onSelect(insp.date!)}
+              key={insp.date as string}
+              onClick={() => onSelect(insp.date as string)}
               style={{ cursor: "pointer" }}
-              role="button"
-              tabIndex={0}
-              aria-label={`${insp.grade} on ${fmtDate(insp.date)}`}
             >
               <circle cx={x} cy={40} r={12} fill={color} opacity={0.9} />
-              <text x={x} y={44} textAnchor="middle" fill="white" style={{ fontSize: 12, fontWeight: 700, fontFamily: "monospace" }}>
+              <text
+                x={x}
+                y={44}
+                textAnchor="middle"
+                fill="white"
+                style={{
+                  fontSize: 12,
+                  fontWeight: 700,
+                  fontFamily: "monospace",
+                }}
+              >
                 {insp.grade}
               </text>
             </g>
@@ -175,7 +225,7 @@ export default function GroceryPage() {
     return () => {
       document.title = "eatsafe — NYC Restaurant Inspection Search";
     };
-  }, [storeId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [storeId, passedGrocery]);
 
   const allInspections = grocery
     ? Object.values(grocery.inspections).sort(
@@ -201,6 +251,7 @@ export default function GroceryPage() {
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
       <div className="max-w-2xl mx-auto px-4 py-8">
         <button
+          type="button"
           onClick={() =>
             window.history.length > 1 ? navigate(-1) : navigate("/")
           }
@@ -253,11 +304,11 @@ export default function GroceryPage() {
                 )}
               </div>
               <GradeBadge
-                  grade={grade}
-                  display={grade ? (GRADE_LABEL[grade] ?? grade) : undefined}
-                  neverInspected={!grade}
-                  size="lg"
-                />
+                grade={grade}
+                display={grade ? (GRADE_LABEL[grade] ?? grade) : undefined}
+                neverInspected={!grade}
+                size="lg"
+              />
             </div>
 
             <div className="flex items-center gap-4 mb-6 flex-wrap">
@@ -278,6 +329,7 @@ export default function GroceryPage() {
                 Yelp ↗
               </a>
               <button
+                type="button"
                 onClick={() => {
                   navigator.clipboard.writeText(window.location.href);
                   setCopied(true);
@@ -310,9 +362,9 @@ export default function GroceryPage() {
               {allInspections.length !== 1 ? "s" : ""}
             </h2>
             <div className="flex flex-col gap-3">
-              {allInspections.map((insp, i) => (
+              {allInspections.map((insp) => (
                 <InspectionSection
-                  key={i}
+                  key={`${insp.date ?? "nodate"}-${insp.grade ?? "none"}`}
                   insp={insp}
                   isLatest={insp === grocery.latest}
                   id={`insp-${insp.date}`}

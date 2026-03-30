@@ -31,7 +31,11 @@ function gradeColor(item: MapItem): string {
   return GRADE_COLOR[item.grade ?? ""] ?? "#71717a";
 }
 
-function FitBounds({ items }: { items: (MapItem & { lat: number; lng: number })[] }) {
+function FitBounds({
+  items,
+}: {
+  items: (MapItem & { lat: number; lng: number })[];
+}) {
   const map = useMap();
   useEffect(() => {
     if (!items.length) return;
@@ -105,8 +109,8 @@ export default function MapView({ items }: { items: MapItem[] }) {
       {mapped.length < items.length && (
         <div className="absolute bottom-2 left-2 z-[1000] bg-white dark:bg-zinc-900 text-zinc-500 dark:text-zinc-400 font-mono text-xs px-2 py-1 rounded shadow">
           {items.length - mapped.length} result
-          {items.length - mapped.length !== 1 ? "s" : ""} without
-          coordinates hidden
+          {items.length - mapped.length !== 1 ? "s" : ""} without coordinates
+          hidden
         </div>
       )}
     </div>

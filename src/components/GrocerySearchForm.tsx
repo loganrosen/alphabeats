@@ -44,9 +44,7 @@ export default function GrocerySearchForm({
   };
 
   const hasAdvancedFilters =
-    values.address !== "" ||
-    values.zip !== "" ||
-    values.grade.length > 0;
+    values.address !== "" || values.zip !== "" || values.grade.length > 0;
   const [showAdvanced, setShowAdvanced] = useState(hasAdvancedFilters);
 
   return (
@@ -54,8 +52,11 @@ export default function GrocerySearchForm({
       {/* Primary row: Name, Borough, Search/Clear */}
       <div className="grid grid-cols-[2fr_1.2fr_auto] gap-3 max-w-6xl items-end max-[800px]:grid-cols-1">
         <div className="flex flex-col gap-1.5">
-          <label className={labelCls}>Store Name</label>
+          <label className={labelCls} htmlFor="grocery-name">
+            Store Name
+          </label>
           <input
+            id="grocery-name"
             className={inputCls}
             value={values.name}
             onChange={set("name")}
@@ -64,14 +65,18 @@ export default function GrocerySearchForm({
           />
         </div>
         <div className="flex flex-col gap-1.5">
-          <label className={labelCls}>Borough</label>
+          <span className={labelCls} id="grocery-boro-label">
+            Borough
+          </span>
           <BoroughFilter
             value={values.boro}
             onChange={(boro) => onChange((prev) => ({ ...prev, boro }))}
+            aria-labelledby="grocery-boro-label"
           />
         </div>
         <div className="flex items-end gap-2">
           <button
+            type="button"
             onClick={onSearch}
             disabled={loading}
             className="font-mono text-sm tracking-widest bg-yellow-400 text-zinc-950 px-6 py-2.5 rounded-md cursor-pointer hover:bg-yellow-300 disabled:opacity-40 disabled:cursor-not-allowed transition-colors whitespace-nowrap"
@@ -79,6 +84,7 @@ export default function GrocerySearchForm({
             {loading ? "…" : "SEARCH"}
           </button>
           <button
+            type="button"
             onClick={onClear}
             className="font-mono text-sm tracking-widest text-zinc-600 border border-zinc-300 px-4 py-2.5 rounded-md cursor-pointer hover:text-zinc-900 hover:border-zinc-500 transition-colors whitespace-nowrap dark:text-zinc-300 dark:border-zinc-600 dark:hover:text-white dark:hover:border-zinc-400"
           >
@@ -115,8 +121,11 @@ export default function GrocerySearchForm({
       {showAdvanced && (
         <div className="grid grid-cols-[1.5fr_0.8fr_1fr] gap-3 max-w-6xl mt-3 items-end max-[800px]:grid-cols-1">
           <div className="flex flex-col gap-1.5">
-            <label className={labelCls}>Street Address</label>
+            <label className={labelCls} htmlFor="grocery-address">
+              Street Address
+            </label>
             <input
+              id="grocery-address"
               className={inputCls}
               value={values.address}
               onChange={set("address")}
@@ -125,8 +134,11 @@ export default function GrocerySearchForm({
             />
           </div>
           <div className="flex flex-col gap-1.5">
-            <label className={labelCls}>Zip Code</label>
+            <label className={labelCls} htmlFor="grocery-zip">
+              Zip Code
+            </label>
             <input
+              id="grocery-zip"
               className={inputCls}
               value={values.zip}
               onChange={set("zip")}
@@ -136,10 +148,13 @@ export default function GrocerySearchForm({
             />
           </div>
           <div className="flex flex-col gap-1.5">
-            <label className={labelCls}>Grade</label>
+            <span className={labelCls} id="grocery-grade-label">
+              Grade
+            </span>
             <GradeFilter
               value={values.grade}
               onChange={(grade) => onChange((prev) => ({ ...prev, grade }))}
+              aria-labelledby="grocery-grade-label"
               options={[
                 ["A", "A"],
                 ["B", "B"],

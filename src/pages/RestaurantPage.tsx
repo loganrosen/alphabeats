@@ -2,11 +2,11 @@ import { useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import type { Inspection, Restaurant } from "../api.js";
 import { fetchByCamis } from "../api.js";
-import { GRADE_LABEL, GRADE_TEXT, gradeForScore } from "../gradeStyles.js";
 import GradeBadge from "../components/GradeBadge.js";
 import GradeTimeline from "../components/GradeTimeline.js";
 import MiniMap from "../components/MiniMap.js";
 import ViolationList from "../components/ViolationList.js";
+import { GRADE_LABEL, GRADE_TEXT, gradeForScore } from "../gradeStyles.js";
 import {
   fmtDate,
   fmtRelativeAge,
@@ -85,11 +85,14 @@ function InspectionSection({
               {insp.score} pts
             </span>
           )}
-          {insp.score != null && (!grade || grade === "P" || grade === "Z" || grade === "N") && (
-            <span className={`font-mono text-xs ${GRADE_TEXT[gradeForScore(insp.score)] ?? "text-zinc-400"}`}>
-              {gradeForScore(insp.score)} if graded
-            </span>
-          )}
+          {insp.score != null &&
+            (!grade || grade === "P" || grade === "Z" || grade === "N") && (
+              <span
+                className={`font-mono text-xs ${GRADE_TEXT[gradeForScore(insp.score)] ?? "text-zinc-400"}`}
+              >
+                {gradeForScore(insp.score)} if graded
+              </span>
+            )}
           {critCount > 0 && (
             <span className="font-mono text-xs text-red-600 border border-red-300 rounded px-2 py-0.5 dark:text-red-300 dark:border-red-800">
               {critCount} critical
@@ -152,7 +155,7 @@ export default function RestaurantPage() {
     return () => {
       document.title = "eatsafe — NYC Restaurant Inspection Search";
     };
-  }, [camis]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [camis, passedRestaurant]);
 
   const allInspections = restaurant
     ? Object.values(restaurant.inspections).sort(
@@ -181,6 +184,7 @@ export default function RestaurantPage() {
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
       <div className="max-w-2xl mx-auto px-4 py-8">
         <button
+          type="button"
           onClick={() =>
             window.history.length > 1 ? navigate(-1) : navigate("/")
           }
@@ -230,18 +234,18 @@ export default function RestaurantPage() {
                 )}
               </div>
               <GradeBadge
-                  grade={grade}
-                  display={grade ? (GRADE_LABEL[grade] ?? grade) : undefined}
-                  sublabel={
-                    grade === "Z" || grade === "P"
-                      ? "PENDING"
-                      : grade === "N"
-                        ? "UNGRADED"
-                        : "GRADE"
-                  }
-                  neverInspected={!grade}
-                  size="lg"
-                />
+                grade={grade}
+                display={grade ? (GRADE_LABEL[grade] ?? grade) : undefined}
+                sublabel={
+                  grade === "Z" || grade === "P"
+                    ? "PENDING"
+                    : grade === "N"
+                      ? "UNGRADED"
+                      : "GRADE"
+                }
+                neverInspected={!grade}
+                size="lg"
+              />
             </div>
 
             <div className="flex items-center gap-4 mb-6 flex-wrap">
@@ -282,6 +286,7 @@ export default function RestaurantPage() {
                 </a>
               )}
               <button
+                type="button"
                 onClick={() => {
                   navigator.clipboard.writeText(window.location.href);
                   setCopied(true);
@@ -338,9 +343,9 @@ export default function RestaurantPage() {
               {allInspections.length !== 1 ? "s" : ""}
             </h2>
             <div className="flex flex-col gap-3">
-              {allInspections.map((insp, i) => (
+              {allInspections.map((insp) => (
                 <InspectionSection
-                  key={i}
+                  key={`${insp.date ?? "nodate"}-${insp.grade ?? "none"}`}
                   insp={insp}
                   isLatest={insp === restaurant.latest}
                   id={`insp-${insp.date}`}

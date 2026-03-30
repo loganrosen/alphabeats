@@ -30,9 +30,11 @@ function InspectionRow({
     <div
       className={`rounded border ${isLatest ? "border-zinc-300 dark:border-zinc-600" : "border-zinc-200 dark:border-zinc-800"}`}
     >
-      <div
-        className={`flex flex-wrap items-center gap-x-2 gap-y-1 px-3 py-2 cursor-pointer select-none ${insp.deficiencies.length > 0 ? "hover:bg-zinc-50 dark:hover:bg-zinc-900" : ""}`}
-        onClick={() => insp.deficiencies.length > 0 && setOpen((o) => !o)}
+      <button
+        type="button"
+        disabled={insp.deficiencies.length === 0}
+        className={`flex flex-wrap items-center gap-x-2 gap-y-1 px-3 py-2 w-full text-left select-none ${insp.deficiencies.length > 0 ? "cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-900" : ""}`}
+        onClick={() => setOpen((o) => !o)}
       >
         <span
           className={`font-display text-base w-6 text-center shrink-0 ${GRADE_TEXT[grade ?? ""] ?? "text-zinc-400"}`}
@@ -47,7 +49,10 @@ function InspectionRow({
           {insp.deficiencies.length > 0 && (
             <>
               <span className="text-xs">
-                <EmojiSet items={insp.deficiencies} categorize={categorizeDeficiency} />
+                <EmojiSet
+                  items={insp.deficiencies}
+                  categorize={categorizeDeficiency}
+                />
               </span>
               <span className="font-mono text-xs text-zinc-500 dark:text-zinc-400">
                 {insp.deficiencies.length} deficienc
@@ -61,19 +66,21 @@ function InspectionRow({
             </>
           )}
         </div>
-      </div>
+      </button>
 
       {open && insp.deficiencies.length > 0 && (
         <div className="px-3 pb-3 border-t border-zinc-100 dark:border-zinc-800 pt-2">
           <ul className="flex flex-col gap-1.5">
-            {insp.deficiencies.map((d, i) => {
+            {insp.deficiencies.map((d) => {
               const cat = deficiencyCategory(d.number);
               return (
                 <li
-                  key={i}
+                  key={`${d.number}-${d.description?.slice(0, 20)}`}
                   className="font-mono text-xs text-zinc-600 dark:text-zinc-300 leading-snug"
                 >
-                  <span className="mr-1" title={cat.label}>{cat.emoji}</span>
+                  <span className="mr-1" title={cat.label}>
+                    {cat.emoji}
+                  </span>
                   <span className="text-zinc-400 dark:text-zinc-500">
                     [{d.number}]
                   </span>{" "}
@@ -162,6 +169,7 @@ export default function GroceryCard({ grocery: g }: { grocery: Grocery }) {
       {allInspections.length > 0 && (
         <>
           <button
+            type="button"
             onClick={() => setHistoryOpen((o) => !o)}
             className="font-mono text-sm text-zinc-500 hover:text-zinc-900 transition-colors flex items-center gap-1.5 text-left cursor-pointer dark:text-zinc-400 dark:hover:text-zinc-100"
           >
@@ -174,7 +182,10 @@ export default function GroceryCard({ grocery: g }: { grocery: Grocery }) {
             {allInspections.length !== 1 ? "S" : ""}
             {recentDeficiencies.length > 0 && (
               <span className="flex items-center gap-0.5 ml-1">
-                <EmojiSet items={recentDeficiencies} categorize={categorizeDeficiency} />
+                <EmojiSet
+                  items={recentDeficiencies}
+                  categorize={categorizeDeficiency}
+                />
                 <span className="font-mono text-xs text-zinc-400 dark:text-zinc-500 ml-0.5">
                   12mo
                 </span>
@@ -184,8 +195,12 @@ export default function GroceryCard({ grocery: g }: { grocery: Grocery }) {
 
           {historyOpen && (
             <div className="flex flex-col gap-1.5">
-              {allInspections.map((ins, idx) => (
-                <InspectionRow key={idx} insp={ins} isLatest={ins === insp} />
+              {allInspections.map((ins) => (
+                <InspectionRow
+                  key={`${ins.date}-${ins.grade ?? "none"}`}
+                  insp={ins}
+                  isLatest={ins === insp}
+                />
               ))}
             </div>
           )}
