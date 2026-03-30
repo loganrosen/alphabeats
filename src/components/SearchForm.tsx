@@ -182,7 +182,7 @@ export default function SearchForm({
             value={values.name}
             onChange={set("name")}
             onKeyDown={onKey}
-            placeholder="e.g. Drunken Munkey"
+            placeholder="e.g. Joe's Pizza"
           />
         </div>
         <div className="flex flex-col gap-1.5">

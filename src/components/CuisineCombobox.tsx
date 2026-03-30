@@ -83,7 +83,7 @@ export default function CuisineCombobox({
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={onKeyDown}
-          placeholder={selected.length === 0 ? "e.g. Indian, Pakistani…" : ""}
+          placeholder={selected.length === 0 ? "e.g. Italian, Chinese…" : ""}
           className="flex-1 min-w-[120px] bg-transparent text-base text-zinc-900 placeholder-zinc-400 focus:outline-none dark:text-zinc-100 dark:placeholder-zinc-500"
         />
         {filtered.length > 0 && (
