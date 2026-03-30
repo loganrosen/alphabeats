@@ -6,7 +6,9 @@ import GradeBadge from "../components/GradeBadge.js";
 import GradeTimeline from "../components/GradeTimeline.js";
 import MiniMap from "../components/MiniMap.js";
 import ViolationList from "../components/ViolationList.js";
+import YelpBadge from "../components/YelpBadge.js";
 import { GRADE_LABEL, GRADE_TEXT, gradeForScore } from "../gradeStyles.js";
+import { useYelpEnrichment } from "../hooks/useYelpEnrichment.js";
 import {
   fmtDate,
   fmtRelativeAge,
@@ -133,6 +135,16 @@ export default function RestaurantPage() {
   const [loading, setLoading] = useState(!passedRestaurant);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+
+  const streetPart_ = restaurant
+    ? [restaurant.building, norm(restaurant.street)].filter(Boolean).join(" ")
+    : "";
+  const yelp = useYelpEnrichment(
+    restaurant?.dba ?? "",
+    streetPart_,
+    "New York",
+    restaurant?.zipcode ?? "",
+  );
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -265,14 +277,11 @@ export default function RestaurantPage() {
               >
                 Google Maps ↗
               </a>
-              <a
-                href={yelpUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="font-mono text-xs text-yellow-600 hover:text-yellow-500 transition-colors dark:text-yellow-400 dark:hover:text-yellow-300"
-              >
-                Yelp ↗
-              </a>
+              <YelpBadge
+                data={yelp.data}
+                loading={yelp.loading}
+                fallbackUrl={yelpUrl}
+              />
               {restaurant.phone && (
                 <a
                   href={`tel:${restaurant.phone}`}

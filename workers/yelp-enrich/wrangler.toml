@@ -1,0 +1,11 @@
+name = "yelp-enrich"
+main = "src/index.ts"
+compatibility_date = "2024-12-01"
+
+[vars]
+ALLOWED_ORIGIN = "https://eatsafe.nyc"
+
+[[kv_namespaces]]
+binding = "YELP_CACHE"
+id = ""
+preview_id = ""
