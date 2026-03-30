@@ -267,34 +267,36 @@ export default function RestaurantCard({
 
       {allInspections.length > 0 && (
         <>
-          <button
-            type="button"
-            onClick={() => setHistoryOpen((o) => !o)}
-            className="font-mono text-sm text-zinc-500 hover:text-zinc-900 transition-colors flex items-center gap-1.5 text-left cursor-pointer dark:text-zinc-400 dark:hover:text-zinc-100"
-          >
-            <span
-              className={`transition-transform ${historyOpen ? "rotate-90" : ""}`}
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => setHistoryOpen((o) => !o)}
+              className="font-mono text-sm text-zinc-500 hover:text-zinc-900 transition-colors flex items-center gap-1.5 text-left cursor-pointer dark:text-zinc-400 dark:hover:text-zinc-100"
             >
-              ▶
-            </span>
-            {allInspections.length} INSPECTION
-            {allInspections.length !== 1 ? "S" : ""}
-            {recentViolations.length > 0 && (
-              <span className="flex items-center gap-0.5 ml-1">
-                <EmojiSet
-                  items={recentViolations}
-                  categorize={categorizeViolation}
-                />
-                <span className="ml-0.5">
-                  <InfoPopover align="left" direction="up">
-                    <p className="text-xs text-zinc-600 dark:text-zinc-300 leading-relaxed">
-                      Violation categories from the past 12 months.
-                    </p>
-                  </InfoPopover>
-                </span>
+              <span
+                className={`transition-transform ${historyOpen ? "rotate-90" : ""}`}
+              >
+                ▶
               </span>
+              {allInspections.length} INSPECTION
+              {allInspections.length !== 1 ? "S" : ""}
+              {recentViolations.length > 0 && (
+                <span className="flex items-center gap-0.5 ml-1">
+                  <EmojiSet
+                    items={recentViolations}
+                    categorize={categorizeViolation}
+                  />
+                </span>
+              )}
+            </button>
+            {recentViolations.length > 0 && (
+              <InfoPopover align="left" direction="up">
+                <p className="text-xs text-zinc-600 dark:text-zinc-300 leading-relaxed">
+                  Violation categories from the past 12 months.
+                </p>
+              </InfoPopover>
             )}
-          </button>
+          </div>
 
           {historyOpen && (
             <div className="flex flex-col gap-1.5">
