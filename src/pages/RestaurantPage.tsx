@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import type { Inspection, Restaurant } from "../api.js";
 import { fetchByCamis } from "../api.js";
-import { GRADE_LABEL, GRADE_TEXT } from "../gradeStyles.js";
+import { GRADE_LABEL, GRADE_TEXT, gradeForScore } from "../gradeStyles.js";
 import GradeBadge from "../components/GradeBadge.js";
 import GradeTimeline from "../components/GradeTimeline.js";
 import MiniMap from "../components/MiniMap.js";
@@ -83,6 +83,11 @@ function InspectionSection({
           {insp.score != null && (
             <span className="font-mono text-xs text-zinc-500 dark:text-zinc-400">
               {insp.score} pts
+            </span>
+          )}
+          {insp.score != null && (!grade || grade === "P" || grade === "Z" || grade === "N") && (
+            <span className={`font-mono text-xs ${GRADE_TEXT[gradeForScore(insp.score)] ?? "text-zinc-400"}`}>
+              {gradeForScore(insp.score)} if graded
             </span>
           )}
           {critCount > 0 && (

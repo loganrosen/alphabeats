@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import type { Inspection, Restaurant } from "../api.js";
-import { GRADE_LABEL, GRADE_TEXT } from "../gradeStyles.js";
+import { GRADE_LABEL, GRADE_TEXT, gradeForScore } from "../gradeStyles.js";
 import {
   fmtDate,
   fmtDistance,
@@ -226,6 +226,11 @@ export default function RestaurantCard({
         {insp?.score != null && (
           <span className="font-mono text-xs text-zinc-700 tracking-wide border border-zinc-300 rounded px-2 py-0.5 dark:text-zinc-100 dark:border-zinc-700">
             {insp.score} pts
+          </span>
+        )}
+        {insp?.score != null && (!grade || grade === "P" || grade === "Z" || grade === "N") && (
+          <span className={`font-mono text-xs ${GRADE_TEXT[gradeForScore(insp.score)] ?? "text-zinc-400"}`}>
+            {gradeForScore(insp.score)} if graded
           </span>
         )}
         {trendArrow && (
