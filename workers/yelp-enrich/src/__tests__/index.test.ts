@@ -242,7 +242,7 @@ describe("worker fetch handler", () => {
     expect(env.YELP_CACHE.put).toHaveBeenCalled();
   });
 
-  it("returns null and caches miss when Yelp match finds nothing", async () => {
+  it("returns null and caches miss when both match and search find nothing", async () => {
     vi.stubGlobal(
       "fetch",
       vi.fn().mockResolvedValue({
@@ -268,5 +268,53 @@ describe("worker fetch handler", () => {
       "null",
       expect.objectContaining({ expirationTtl: expect.any(Number) }),
     );
+  });
+
+  it("falls back to Business Search when Match returns nothing", async () => {
+    const detailsResponse = {
+      rating: 2.3,
+      review_count: 86,
+      price: "$",
+      url: "https://yelp.com/biz/mcdonalds",
+      categories: [{ alias: "burgers", title: "Burgers" }],
+    };
+
+    const fetchMock = vi
+      .fn()
+      // Match returns empty
+      .mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({ businesses: [] }),
+      })
+      // Search finds it
+      .mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({ businesses: [{ id: "mcdonalds-123" }] }),
+      })
+      // Details
+      .mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(detailsResponse),
+      });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const res = await worker.fetch(
+      makeRequest("POST", {
+        name: "MCDONALDS",
+        address: "1033 6TH AVE",
+        city: "New York",
+        zip: "10018",
+      }),
+      env as never,
+    );
+
+    const body = (await res.json()) as { rating: number };
+    expect(body.rating).toBe(2.3);
+
+    // Verify: match → search → details (3 calls)
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+    expect(fetchMock.mock.calls[0][0]).toContain("businesses/matches");
+    expect(fetchMock.mock.calls[1][0]).toContain("businesses/search");
+    expect(fetchMock.mock.calls[2][0]).toContain("businesses/mcdonalds-123");
   });
 });

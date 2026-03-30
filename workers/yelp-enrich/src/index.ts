@@ -59,24 +59,49 @@ async function yelpMatch(
   req: EnrichRequest,
   apiKey: string,
 ): Promise<string | null> {
-  const params = new URLSearchParams({
+  // Try exact Business Match first
+  const matchParams = new URLSearchParams({
     name: req.name,
     address1: req.address,
     city: req.city,
     state: "NY",
     country: "US",
   });
-  if (req.zip) params.set("postal_code", req.zip);
+  if (req.zip) matchParams.set("postal_code", req.zip);
 
-  const res = await fetch(
-    `https://api.yelp.com/v3/businesses/matches?${params}`,
+  const matchRes = await fetch(
+    `https://api.yelp.com/v3/businesses/matches?${matchParams}`,
     { headers: { Authorization: `Bearer ${apiKey}` } },
   );
 
-  if (!res.ok) return null;
+  if (matchRes.ok) {
+    const matchData = (await matchRes.json()) as {
+      businesses: YelpBusiness[];
+    };
+    if (matchData.businesses?.[0]?.id) return matchData.businesses[0].id;
+  }
 
-  const data = (await res.json()) as { businesses: YelpBusiness[] };
-  return data.businesses?.[0]?.id ?? null;
+  // Fall back to fuzzy Business Search
+  const location = [req.address, req.city, "NY", req.zip]
+    .filter(Boolean)
+    .join(" ");
+  const searchParams = new URLSearchParams({
+    term: req.name,
+    location,
+    limit: "1",
+  });
+
+  const searchRes = await fetch(
+    `https://api.yelp.com/v3/businesses/search?${searchParams}`,
+    { headers: { Authorization: `Bearer ${apiKey}` } },
+  );
+
+  if (!searchRes.ok) return null;
+
+  const searchData = (await searchRes.json()) as {
+    businesses: YelpBusiness[];
+  };
+  return searchData.businesses?.[0]?.id ?? null;
 }
 
 async function yelpDetails(
