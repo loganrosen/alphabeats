@@ -13,7 +13,8 @@ export interface UseYelpEnrichmentResult {
 }
 
 const WORKER_URL =
-  import.meta.env.VITE_YELP_WORKER_URL ?? "https://yelp-enrich.eatsafe.nyc";
+  import.meta.env.VITE_YELP_WORKER_URL ??
+  "https://yelp-enrich.eatsafe.workers.dev";
 
 const inFlightRequests = new Map<string, Promise<YelpEnrichment | null>>();
 

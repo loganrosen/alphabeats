@@ -7,5 +7,4 @@ ALLOWED_ORIGIN = "https://eatsafe.nyc"
 
 [[kv_namespaces]]
 binding = "YELP_CACHE"
-id = ""
-preview_id = ""
+id = "4165e84b814a4475b22e448dad2ca4ba"
