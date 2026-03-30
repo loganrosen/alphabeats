@@ -23,9 +23,10 @@ jobs:
       - name: Deploy to server
         env:
           SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
         run: |
           mkdir -p ~/.ssh
           echo "$SSH_KEY" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan loganrosen.com >> ~/.ssh/known_hosts
-          rsync -avz --delete dist/ logan@loganrosen.com:/var/www/eatsafe/
+          ssh-keyscan "$DEPLOY_HOST" >> ~/.ssh/known_hosts
+          rsync -avz --delete dist/ "logan@${DEPLOY_HOST}:/var/www/eatsafe/"
