@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { deficiencyCategory } from "../deficiencyCategory.js";
 import { GRADE_TEXT } from "../gradeStyles.js";
 import type { Deficiency, Grocery, GroceryInspection } from "../groceryApi.js";
+import { useYelpEnrichment } from "../hooks/useYelpEnrichment.js";
 import {
   fmtDate,
   fmtDistance,
@@ -13,6 +14,7 @@ import {
 import EmojiSet from "./EmojiSet.js";
 import GradeBadge from "./GradeBadge.js";
 import GroceryGradeInfo from "./GroceryGradeInfo.js";
+import YelpBadge from "./YelpBadge.js";
 
 const categorizeDeficiency = (d: Deficiency) => deficiencyCategory(d.number);
 
@@ -97,6 +99,13 @@ function InspectionRow({
 
 export default function GroceryCard({ grocery: g }: { grocery: Grocery }) {
   const [historyOpen, setHistoryOpen] = useState(false);
+
+  const yelp = useYelpEnrichment(
+    g.tradeName,
+    norm(g.street),
+    g.city || "New York",
+    g.zipcode,
+  );
 
   const insp = g.latest;
   const gradedInsp = g.latestGraded;
@@ -216,14 +225,11 @@ export default function GroceryCard({ grocery: g }: { grocery: Grocery }) {
             : `Last inspected ${fmtDate(insp?.date)}${fmtRelativeAge(insp?.date) ? ` · ${fmtRelativeAge(insp?.date)}` : ""}`}
         </span>
         <div className="flex items-center gap-3">
-          <a
-            href={yelpUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="font-mono text-xs text-yellow-600 hover:text-yellow-500 transition-colors dark:text-yellow-400 dark:hover:text-yellow-300"
-          >
-            Yelp ↗
-          </a>
+          <YelpBadge
+            data={yelp.data}
+            loading={yelp.loading}
+            fallbackUrl={yelpUrl}
+          />
         </div>
       </div>
     </div>

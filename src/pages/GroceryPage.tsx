@@ -2,10 +2,12 @@ import { useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import GradeBadge from "../components/GradeBadge.js";
 import MiniMap from "../components/MiniMap.js";
+import YelpBadge from "../components/YelpBadge.js";
 import { deficiencyCategory } from "../deficiencyCategory.js";
 import { GRADE_COLOR, GRADE_LABEL, GRADE_TEXT } from "../gradeStyles.js";
 import type { Grocery, GroceryInspection } from "../groceryApi.js";
 import { fetchGroceryById } from "../groceryApi.js";
+import { useYelpEnrichment } from "../hooks/useYelpEnrichment.js";
 import {
   fmtDate,
   fmtRelativeAge,
@@ -204,6 +206,13 @@ export default function GroceryPage() {
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
+  const yelp = useYelpEnrichment(
+    grocery?.tradeName ?? "",
+    grocery ? norm(grocery.street) : "",
+    grocery?.city || "New York",
+    grocery?.zipcode ?? "",
+  );
+
   useEffect(() => {
     window.scrollTo(0, 0);
     if (passedGrocery) {
@@ -320,14 +329,11 @@ export default function GroceryPage() {
               >
                 Google Maps ↗
               </a>
-              <a
-                href={yelpUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="font-mono text-xs text-yellow-600 hover:text-yellow-500 transition-colors dark:text-yellow-400 dark:hover:text-yellow-300"
-              >
-                Yelp ↗
-              </a>
+              <YelpBadge
+                data={yelp.data}
+                loading={yelp.loading}
+                fallbackUrl={yelpUrl}
+              />
               <button
                 type="button"
                 onClick={() => {
