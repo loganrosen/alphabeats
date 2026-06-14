@@ -3,7 +3,6 @@ import { Link } from "react-router-dom";
 import { deficiencyCategory } from "../deficiencyCategory.js";
 import { GRADE_TEXT } from "../gradeStyles.js";
 import type { Deficiency, Grocery, GroceryInspection } from "../groceryApi.js";
-import { useYelpEnrichment } from "../hooks/useYelpEnrichment.js";
 import {
   fmtDate,
   fmtDistance,
@@ -14,7 +13,6 @@ import {
 import EmojiSet from "./EmojiSet.js";
 import GradeBadge from "./GradeBadge.js";
 import GroceryGradeInfo from "./GroceryGradeInfo.js";
-import YelpBadge from "./YelpBadge.js";
 
 const categorizeDeficiency = (d: Deficiency) => deficiencyCategory(d.number);
 
@@ -100,20 +98,12 @@ function InspectionRow({
 export default function GroceryCard({ grocery: g }: { grocery: Grocery }) {
   const [historyOpen, setHistoryOpen] = useState(false);
 
-  const yelp = useYelpEnrichment(
-    g.tradeName,
-    norm(g.street),
-    g.city || "New York",
-    g.zipcode,
-  );
-
   const insp = g.latest;
   const gradedInsp = g.latestGraded;
   const neverInspected = !insp;
   const grade = gradedInsp?.grade ?? null;
   const addr = [norm(g.street), g.zipcode, g.boro].filter(Boolean).join(" · ");
   const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([g.tradeName, norm(g.street), g.zipcode, "New York NY"].filter(Boolean).join(" "))}`;
-  const yelpUrl = `https://www.yelp.com/search?find_desc=${encodeURIComponent(g.tradeName)}&find_loc=${encodeURIComponent([norm(g.street), g.zipcode, "New York NY"].filter(Boolean).join(", "))}`;
   const allInspections = Object.values(g.inspections).sort(
     (a, b) =>
       new Date(b.date ?? "").getTime() - new Date(a.date ?? "").getTime(),
@@ -224,13 +214,6 @@ export default function GroceryCard({ grocery: g }: { grocery: Grocery }) {
             ? "No inspection on record"
             : `Last inspected ${fmtDate(insp?.date)}${fmtRelativeAge(insp?.date) ? ` · ${fmtRelativeAge(insp?.date)}` : ""}`}
         </span>
-        <div className="flex items-center gap-3">
-          <YelpBadge
-            data={yelp.data}
-            loading={yelp.loading}
-            fallbackUrl={yelpUrl}
-          />
-        </div>
       </div>
     </div>
   );

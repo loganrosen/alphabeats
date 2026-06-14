@@ -2,12 +2,10 @@ import { useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import GradeBadge from "../components/GradeBadge.js";
 import MiniMap from "../components/MiniMap.js";
-import YelpBadge from "../components/YelpBadge.js";
 import { deficiencyCategory } from "../deficiencyCategory.js";
 import { GRADE_COLOR, GRADE_LABEL, GRADE_TEXT } from "../gradeStyles.js";
 import type { Grocery, GroceryInspection } from "../groceryApi.js";
 import { fetchGroceryById } from "../groceryApi.js";
-import { useYelpEnrichment } from "../hooks/useYelpEnrichment.js";
 import {
   fmtDate,
   fmtRelativeAge,
@@ -206,13 +204,6 @@ export default function GroceryPage() {
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
-  const yelp = useYelpEnrichment(
-    grocery?.tradeName ?? "",
-    grocery ? norm(grocery.street) : "",
-    grocery?.city || "New York",
-    grocery?.zipcode ?? "",
-  );
-
   useEffect(() => {
     window.scrollTo(0, 0);
     if (passedGrocery) {
@@ -251,9 +242,6 @@ export default function GroceryPage() {
     : "";
   const mapsUrl = grocery
     ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([grocery.tradeName, norm(grocery.street), grocery.zipcode, "New York NY"].filter(Boolean).join(" "))}`
-    : "";
-  const yelpUrl = grocery
-    ? `https://www.yelp.com/search?find_desc=${encodeURIComponent(grocery.tradeName)}&find_loc=${encodeURIComponent([norm(grocery.street), grocery.zipcode, "New York NY"].filter(Boolean).join(", "))}`
     : "";
 
   return (
@@ -329,11 +317,6 @@ export default function GroceryPage() {
               >
                 Google Maps ↗
               </a>
-              <YelpBadge
-                data={yelp.data}
-                loading={yelp.loading}
-                fallbackUrl={yelpUrl}
-              />
               <button
                 type="button"
                 onClick={() => {
