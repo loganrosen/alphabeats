@@ -2,7 +2,6 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import type { Inspection, Restaurant } from "../api.js";
 import { GRADE_LABEL, GRADE_TEXT, gradeForScore } from "../gradeStyles.js";
-import { useYelpEnrichment } from "../hooks/useYelpEnrichment.js";
 import {
   fmtDate,
   fmtDistance,
@@ -16,7 +15,6 @@ import GradeBadge from "./GradeBadge.js";
 import GradeInfo from "./GradeInfo.js";
 import InfoPopover from "./InfoPopover.js";
 import ViolationList from "./ViolationList.js";
-import YelpBadge from "./YelpBadge.js";
 
 function abbrevInspType(type: string | undefined): string {
   if (!type) return "";
@@ -82,6 +80,11 @@ function InspectionRow({
               closed
             </span>
           )}
+          {insp.reopened && (
+            <span className="font-mono text-xs text-sky-600 border border-sky-300 rounded px-1.5 py-0.5 dark:text-sky-300 dark:border-sky-800">
+              reopened
+            </span>
+          )}
           {critCount > 0 && (
             <span className="font-mono text-xs text-red-500 dark:text-red-400">
               {critCount}✕ crit
@@ -120,17 +123,35 @@ export default function RestaurantCard({
   restaurant: Restaurant;
 }) {
   const [historyOpen, setHistoryOpen] = useState(false);
-
   const streetPart = [r.building, norm(r.street)].filter(Boolean).join(" ");
-  const yelp = useYelpEnrichment(r.dba, streetPart, "New York", r.zipcode);
 
   const insp = r.latest;
   const gradedInsp = r.latestGraded;
   const neverInspected = !insp;
   const grade = gradedInsp?.grade ?? null;
+  const reopenedByDohmh =
+    r.recentClosure?.status === "reopened" || (insp?.reopened ?? false);
+  const closedByDohmh = insp?.closed ?? false;
+  const badgeGrade = reopenedByDohmh
+    ? "REOPENED"
+    : closedByDohmh
+      ? "CLOSED"
+      : grade;
+  const badgeDisplay = reopenedByDohmh
+    ? "REOPENED"
+    : closedByDohmh
+      ? "CLOSED"
+      : (GRADE_LABEL[grade ?? ""] ?? grade ?? "?");
+  const badgeSublabel =
+    reopenedByDohmh || closedByDohmh
+      ? "DOHMH"
+      : grade === "Z" || grade === "P"
+        ? "PENDING"
+        : grade === "N"
+          ? "UNGRADED"
+          : "GRADE";
   const addr = [streetPart, r.zipcode, r.boro].filter(Boolean).join(" · ");
   const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([r.dba, streetPart, r.zipcode, "New York NY"].filter(Boolean).join(" "))}`;
-  const yelpUrl = `https://www.yelp.com/search?find_desc=${encodeURIComponent(r.dba)}&find_loc=${encodeURIComponent([streetPart, r.zipcode, "New York NY"].filter(Boolean).join(", "))}`;
   const allInspections = Object.values(r.inspections).sort(
     (a, b) =>
       new Date(b.date ?? "").getTime() - new Date(a.date ?? "").getTime(),
@@ -213,15 +234,9 @@ export default function RestaurantCard({
           </div>
         </div>
         <GradeBadge
-          grade={grade}
-          display={GRADE_LABEL[grade ?? ""] ?? grade ?? "?"}
-          sublabel={
-            grade === "Z" || grade === "P"
-              ? "PENDING"
-              : grade === "N"
-                ? "UNGRADED"
-                : "GRADE"
-          }
+          grade={badgeGrade}
+          display={badgeDisplay}
+          sublabel={badgeSublabel}
           neverInspected={neverInspected}
         />
       </div>
@@ -261,6 +276,21 @@ export default function RestaurantCard({
         {latestCritCount > 0 && (
           <span className="font-mono text-xs text-red-600 border border-red-300 rounded px-2 py-0.5 dark:text-red-300 dark:border-red-800">
             {latestCritCount} critical
+          </span>
+        )}
+        {r.recentClosure && (
+          <span
+            className={`font-mono text-xs rounded px-2 py-0.5 border ${
+              r.recentClosure.status === "closed"
+                ? "text-orange-600 border-orange-300 dark:text-orange-300 dark:border-orange-800"
+                : "text-sky-600 border-sky-300 dark:text-sky-300 dark:border-sky-800"
+            }`}
+          >
+            {r.recentClosure.status === "closed"
+              ? `closed by DOHMH ${fmtDate(r.recentClosure.closureDate)}`
+              : r.recentClosure.reopenDate
+                ? `reopened by DOHMH ${fmtDate(r.recentClosure.reopenDate)}`
+                : "no longer listed as closed"}
           </span>
         )}
       </div>
@@ -321,11 +351,6 @@ export default function RestaurantCard({
             : `Last inspected ${fmtDate(insp?.date)}${fmtRelativeAge(insp?.date) ? ` · ${fmtRelativeAge(insp?.date)}` : ""}`}
         </span>
         <div className="flex items-center gap-3">
-          <YelpBadge
-            data={yelp.data}
-            loading={yelp.loading}
-            fallbackUrl={yelpUrl}
-          />
           <a
             href={`https://a816-health.nyc.gov/ABCEatsRestaurants/#!/Search/${r.camis}`}
             target="_blank"

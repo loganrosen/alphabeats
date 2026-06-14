@@ -9,6 +9,7 @@ A better search interface for [NYC DOHMH restaurant inspection data](https://dat
 - Search by name, address, zip code, cuisine, neighborhood, borough, and grade
 - Multi-select filters for borough, grade, and community board (neighborhood)
 - Word-boundary name matching (searching "Om" finds "Om Restaurant", not "Momofuku")
+- Citywide discovery view for recent restaurant closures
 - Restaurant inspection history with grade timeline
 - Dark mode
 
