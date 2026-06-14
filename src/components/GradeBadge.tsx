@@ -29,6 +29,19 @@ export default function GradeBadge({
   size?: "sm" | "lg";
 }) {
   const s = SIZE[size];
+  const displayText = display ?? grade ?? "?";
+  const isStatus = displayText.length > 2;
+  const outerClass = isStatus
+    ? size === "lg"
+      ? "w-24 py-3 px-2"
+      : "w-20 h-14 px-2"
+    : s.outer;
+  const textClass = isStatus
+    ? size === "lg"
+      ? "font-mono font-bold text-base tracking-wide"
+      : "font-mono font-bold text-sm tracking-wide"
+    : `font-display ${s.text}`;
+  const sublabelClass = isStatus ? "mt-1" : s.sublabel;
 
   if (neverInspected) {
     return (
@@ -44,13 +57,11 @@ export default function GradeBadge({
 
   return (
     <div
-      className={`${GRADE_STYLES[grade ?? ""] ?? "bg-zinc-400 dark:bg-zinc-700"} ${s.outer} rounded shrink-0 flex flex-col items-center justify-center relative text-white`}
+      className={`${GRADE_STYLES[grade ?? ""] ?? "bg-zinc-400 dark:bg-zinc-700"} ${outerClass} rounded shrink-0 flex flex-col items-center justify-center relative text-white`}
     >
-      <span className={`font-display ${s.text} leading-none`}>
-        {display ?? grade ?? "?"}
-      </span>
+      <span className={`${textClass} leading-none`}>{displayText}</span>
       <span
-        className={`font-mono text-[0.45rem] tracking-widest ${s.sublabel} opacity-75`}
+        className={`font-mono text-[0.45rem] tracking-widest ${sublabelClass} opacity-75`}
       >
         {sublabel}
       </span>
