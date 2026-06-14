@@ -80,6 +80,11 @@ function InspectionRow({
               closed
             </span>
           )}
+          {insp.reopened && (
+            <span className="font-mono text-xs text-sky-600 border border-sky-300 rounded px-1.5 py-0.5 dark:text-sky-300 dark:border-sky-800">
+              reopened
+            </span>
+          )}
           {critCount > 0 && (
             <span className="font-mono text-xs text-red-500 dark:text-red-400">
               {critCount}✕ crit
@@ -124,6 +129,27 @@ export default function RestaurantCard({
   const gradedInsp = r.latestGraded;
   const neverInspected = !insp;
   const grade = gradedInsp?.grade ?? null;
+  const reopenedByDohmh =
+    r.recentClosure?.status === "reopened" || (insp?.reopened ?? false);
+  const closedByDohmh = insp?.closed ?? false;
+  const badgeGrade = reopenedByDohmh
+    ? "REOPENED"
+    : closedByDohmh
+      ? "CLOSED"
+      : grade;
+  const badgeDisplay = reopenedByDohmh
+    ? "REOPENED"
+    : closedByDohmh
+      ? "CLOSED"
+      : (GRADE_LABEL[grade ?? ""] ?? grade ?? "?");
+  const badgeSublabel =
+    reopenedByDohmh || closedByDohmh
+      ? "DOHMH"
+      : grade === "Z" || grade === "P"
+        ? "PENDING"
+        : grade === "N"
+          ? "UNGRADED"
+          : "GRADE";
   const addr = [streetPart, r.zipcode, r.boro].filter(Boolean).join(" · ");
   const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([r.dba, streetPart, r.zipcode, "New York NY"].filter(Boolean).join(" "))}`;
   const allInspections = Object.values(r.inspections).sort(
@@ -208,15 +234,9 @@ export default function RestaurantCard({
           </div>
         </div>
         <GradeBadge
-          grade={grade}
-          display={GRADE_LABEL[grade ?? ""] ?? grade ?? "?"}
-          sublabel={
-            grade === "Z" || grade === "P"
-              ? "PENDING"
-              : grade === "N"
-                ? "UNGRADED"
-                : "GRADE"
-          }
+          grade={badgeGrade}
+          display={badgeDisplay}
+          sublabel={badgeSublabel}
           neverInspected={neverInspected}
         />
       </div>
@@ -256,6 +276,21 @@ export default function RestaurantCard({
         {latestCritCount > 0 && (
           <span className="font-mono text-xs text-red-600 border border-red-300 rounded px-2 py-0.5 dark:text-red-300 dark:border-red-800">
             {latestCritCount} critical
+          </span>
+        )}
+        {r.recentClosure && (
+          <span
+            className={`font-mono text-xs rounded px-2 py-0.5 border ${
+              r.recentClosure.status === "closed"
+                ? "text-orange-600 border-orange-300 dark:text-orange-300 dark:border-orange-800"
+                : "text-sky-600 border-sky-300 dark:text-sky-300 dark:border-sky-800"
+            }`}
+          >
+            {r.recentClosure.status === "closed"
+              ? `closed by DOHMH ${fmtDate(r.recentClosure.closureDate)}`
+              : r.recentClosure.reopenDate
+                ? `reopened by DOHMH ${fmtDate(r.recentClosure.reopenDate)}`
+                : "no longer listed as closed"}
           </span>
         )}
       </div>
