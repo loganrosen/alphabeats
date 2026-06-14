@@ -25,6 +25,7 @@ export interface Violation {
 
 export interface Inspection {
   date: string | undefined;
+  gradeDate: string | undefined;
   type: string | undefined;
   grade: string | undefined;
   score: number | null;
@@ -77,6 +78,92 @@ export interface CommunityBoard {
   code: string;
   label: string;
   borough: string;
+}
+
+export type RecentRestaurantFeed = "closures";
+
+const REAL_INSPECTION_DATE = "inspection_date >= '2000-01-01T00:00:00.000'";
+
+function boroCondition(boro: string[]): string | null {
+  if (boro.length === 1) return `boro='${boro[0].replace(/'/g, "''")}'`;
+  if (boro.length > 1) {
+    return `(${boro.map((b) => `boro='${b.replace(/'/g, "''")}'`).join(" OR ")})`;
+  }
+  return null;
+}
+
+function actionIndicatesClosed(action: string | undefined): boolean {
+  return action?.toLowerCase().includes("closed") ?? false;
+}
+
+function actionIndicatesReopened(action: string | undefined): boolean {
+  const lower = action?.toLowerCase() ?? "";
+  return lower.includes("re-opened") || lower.includes("reopened");
+}
+
+function latestActionStillClosed(rows: ApiRow[], camis: string): boolean {
+  const restaurantRows = rows.filter((row) => row.camis === camis);
+  const latestDate = restaurantRows
+    .map((row) => row.inspection_date)
+    .filter((date): date is string => Boolean(date))
+    .sort((a, b) => new Date(b).getTime() - new Date(a).getTime())[0];
+  if (!latestDate) return false;
+
+  const latestRows = restaurantRows.filter(
+    (row) => row.inspection_date === latestDate,
+  );
+  return (
+    latestRows.some((row) => actionIndicatesClosed(row.action)) &&
+    !latestRows.some((row) => actionIndicatesReopened(row.action))
+  );
+}
+
+function recentRestaurantQuery(
+  feed: RecentRestaurantFeed,
+  params: { boro?: string[] } = {},
+): URLSearchParams {
+  const conditions = [REAL_INSPECTION_DATE];
+  if (feed === "closures") {
+    conditions.push("upper(action) like '%CLOSED%'");
+  }
+  const borough = boroCondition(params.boro ?? []);
+  if (borough) conditions.push(borough);
+
+  return new URLSearchParams({
+    $where: conditions.join(" AND "),
+    $order: "inspection_date DESC",
+    $limit: "5000",
+  });
+}
+
+export async function fetchRecentRestaurants(
+  feed: RecentRestaurantFeed,
+  params: { boro?: string[] } = {},
+): Promise<{ rows: ApiRow[]; restaurants: Restaurant[] }> {
+  const query = recentRestaurantQuery(feed, params);
+  const res = await fetch(`${API}?${query}`);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const closureRows: ApiRow[] = await res.json();
+  const camises = [...new Set(closureRows.map((r) => r.camis).filter(Boolean))];
+  if (camises.length === 0) return { rows: closureRows, restaurants: [] };
+
+  const allRows: ApiRow[] = [];
+  for (let i = 0; i < camises.length; i += 25) {
+    const chunk = camises.slice(i, i + 25);
+    const historyQuery = new URLSearchParams({
+      $where: `camis in(${chunk.map((camis) => `'${camis.replace(/'/g, "''")}'`).join(",")}) AND ${REAL_INSPECTION_DATE}`,
+      $order: "inspection_date DESC",
+      $limit: "50000",
+    });
+    const historyRes = await fetch(`${API}?${historyQuery}`);
+    if (!historyRes.ok) throw new Error(`HTTP ${historyRes.status}`);
+    allRows.push(...((await historyRes.json()) as ApiRow[]));
+  }
+
+  const restaurants = groupRows(allRows).filter((r) =>
+    latestActionStillClosed(allRows, r.camis),
+  );
+  return { rows: closureRows, restaurants };
 }
 
 export async function fetchCommunityBoards(): Promise<CommunityBoard[]> {
@@ -133,13 +220,8 @@ export async function searchRestaurants(
       conditions.push(`(upper(dba) like '${s}%' OR upper(dba) like '% ${s}%')`);
     }
   }
-  if (params.boro.length === 1) {
-    conditions.push(`boro='${params.boro[0].replace(/'/g, "''")}'`);
-  } else if (params.boro.length > 1) {
-    conditions.push(
-      `(${params.boro.map((b) => `boro='${b.replace(/'/g, "''")}'`).join(" OR ")})`,
-    );
-  }
+  const borough = boroCondition(params.boro);
+  if (borough) conditions.push(borough);
   if (params.zip) conditions.push(`zipcode='${params.zip}'`);
   if (params.cuisine) {
     const terms = params.cuisine
@@ -240,20 +322,22 @@ export function groupRows(rows: ApiRow[]): Restaurant[] {
     if (!rest.inspections[key]) {
       rest.inspections[key] = {
         date: r.inspection_date,
+        gradeDate: r.grade_date,
         type: r.inspection_type,
         grade: r.grade,
         score: r.score != null ? parseInt(r.score, 10) : null,
         violations: [],
-        closed: r.action?.toLowerCase().includes("closed") ?? false,
+        closed: actionIndicatesClosed(r.action),
         reinspection:
           r.inspection_type?.toLowerCase().includes("re-inspection") ?? false,
       };
     } else {
       const insp = rest.inspections[key];
       if (!insp.grade && r.grade) insp.grade = r.grade;
+      if (!insp.gradeDate && r.grade_date) insp.gradeDate = r.grade_date;
       if (insp.score == null && r.score != null)
         insp.score = parseInt(r.score, 10);
-      if (r.action?.toLowerCase().includes("closed")) insp.closed = true;
+      if (actionIndicatesClosed(r.action)) insp.closed = true;
       if (r.inspection_type?.toLowerCase().includes("re-inspection"))
         insp.reinspection = true;
     }
