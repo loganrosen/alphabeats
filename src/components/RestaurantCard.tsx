@@ -128,6 +128,18 @@ export default function RestaurantCard({
   const gradedInsp = r.latestGraded;
   const neverInspected = !insp;
   const grade = gradedInsp?.grade ?? null;
+  const closedByDohmh = insp?.closed ?? false;
+  const badgeGrade = closedByDohmh ? "CLOSED" : grade;
+  const badgeDisplay = closedByDohmh
+    ? "CLOSED"
+    : (GRADE_LABEL[grade ?? ""] ?? grade ?? "?");
+  const badgeSublabel = closedByDohmh
+    ? "DOHMH"
+    : grade === "Z" || grade === "P"
+      ? "PENDING"
+      : grade === "N"
+        ? "UNGRADED"
+        : "GRADE";
   const addr = [streetPart, r.zipcode, r.boro].filter(Boolean).join(" · ");
   const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([r.dba, streetPart, r.zipcode, "New York NY"].filter(Boolean).join(" "))}`;
   const yelpUrl = `https://www.yelp.com/search?find_desc=${encodeURIComponent(r.dba)}&find_loc=${encodeURIComponent([streetPart, r.zipcode, "New York NY"].filter(Boolean).join(", "))}`;
@@ -213,15 +225,9 @@ export default function RestaurantCard({
           </div>
         </div>
         <GradeBadge
-          grade={grade}
-          display={GRADE_LABEL[grade ?? ""] ?? grade ?? "?"}
-          sublabel={
-            grade === "Z" || grade === "P"
-              ? "PENDING"
-              : grade === "N"
-                ? "UNGRADED"
-                : "GRADE"
-          }
+          grade={badgeGrade}
+          display={badgeDisplay}
+          sublabel={badgeSublabel}
           neverInspected={neverInspected}
         />
       </div>

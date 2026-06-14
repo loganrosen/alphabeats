@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import type { DatasetMode } from "../App.js";
-import type { Restaurant } from "../api.js";
+import type { RecentRestaurantFeed, Restaurant } from "../api.js";
 import type { Grocery } from "../groceryApi.js";
 import GroceryCard from "./GroceryCard.js";
 import MapView from "./MapView.js";
@@ -19,6 +19,19 @@ type SortKey = "grade" | "score" | "recent" | "name" | "distance";
 
 const GRADE_ORDER: Record<string, number> = { A: 0, B: 1, C: 2 };
 
+const RECENT_FEED_LABEL: Record<RecentRestaurantFeed, string> = {
+  closures: "recent closure",
+};
+
+const RECENT_FEED_TITLE: Record<RecentRestaurantFeed, string> = {
+  closures: "Recent closures",
+};
+
+function recentTimestamp(r: Restaurant) {
+  const date = r.latest?.date;
+  return new Date(date ?? "").getTime();
+}
+
 function applySortKey(list: Restaurant[], key: SortKey): Restaurant[] {
   const copy = [...list];
   if (key === "grade")
@@ -34,11 +47,7 @@ function applySortKey(list: Restaurant[], key: SortKey): Restaurant[] {
       (a, b) => (b.latest?.score ?? -1) - (a.latest?.score ?? -1),
     );
   if (key === "recent")
-    return copy.sort(
-      (a, b) =>
-        new Date(b.latest?.date ?? "").getTime() -
-        new Date(a.latest?.date ?? "").getTime(),
-    );
+    return copy.sort((a, b) => recentTimestamp(b) - recentTimestamp(a));
   if (key === "distance")
     return copy.sort(
       (a, b) => (a.distance ?? Infinity) - (b.distance ?? Infinity),
@@ -73,22 +82,38 @@ function applySortKeyGrocery(list: Grocery[], key: SortKey): Grocery[] {
 export default function ResultsGrid({
   result,
   mode,
+  recentFeed,
 }: {
   result: SearchResult;
   mode: DatasetMode;
+  recentFeed: RecentRestaurantFeed | null;
 }) {
   const { status, restaurants, groceries, hitLimit, totalRows, error } = result;
   const isGrocery = mode === "grocery";
   const items = isGrocery ? groceries : restaurants;
   const [view, setView] = useState<"list" | "map">("list");
   const hasDistance = items.length > 0 && items[0]?.distance != null;
-  const [sortKey, setSortKey] = useState<SortKey>("grade");
+  const defaultSortKey = hasDistance
+    ? "distance"
+    : recentFeed
+      ? "recent"
+      : "grade";
+  const [sortKey, setSortKey] = useState<SortKey>(defaultSortKey);
 
   useEffect(() => {
-    setSortKey(hasDistance ? "distance" : "grade");
-  }, [hasDistance]);
+    setSortKey(defaultSortKey);
+  }, [defaultSortKey]);
 
-  const itemLabel = isGrocery ? "store" : "restaurant";
+  const itemLabel =
+    recentFeed && !isGrocery
+      ? RECENT_FEED_LABEL[recentFeed]
+      : isGrocery
+        ? "store"
+        : "restaurant";
+  const summaryLabel =
+    recentFeed && !isGrocery
+      ? RECENT_FEED_TITLE[recentFeed]
+      : `${itemLabel[0].toUpperCase()}${itemLabel.slice(1)} results`;
 
   if (status === "idle")
     return (
@@ -158,22 +183,27 @@ export default function ResultsGrid({
             </button>
           )}
         </span>
-        {hitLimit && (
+        {hitLimit && !recentFeed && (
           <span className="text-amber-500">
             ⚠ Result limit reached — refine your search
           </span>
         )}
         <span className="ml-auto flex items-center gap-3">
-          <span>{totalRows.toLocaleString()} inspection records</span>
+          <span>
+            {recentFeed
+              ? summaryLabel
+              : `${totalRows.toLocaleString()} inspection records`}
+          </span>
           <select
             value={sortKey}
             onChange={(e) => setSortKey(e.target.value as SortKey)}
             className="font-mono text-xs bg-white dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-700 rounded px-2 py-1 text-zinc-700 dark:text-zinc-300 cursor-pointer"
           >
             {hasDistance && <option value="distance">Distance</option>}
+            {recentFeed && <option value="recent">Most recent</option>}
             <option value="grade">Grade</option>
             {!isGrocery && <option value="score">Violation points ↓</option>}
-            <option value="recent">Most recent</option>
+            {!recentFeed && <option value="recent">Most recent</option>}
             <option value="name">Name</option>
           </select>
           <div className="flex rounded overflow-hidden border border-zinc-300 dark:border-zinc-700 text-xs font-mono">

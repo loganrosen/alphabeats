@@ -177,6 +177,20 @@ export default function RestaurantPage() {
     : [];
 
   const grade = restaurant?.latestGraded?.grade ?? null;
+  const closedByDohmh = restaurant?.latest?.closed ?? false;
+  const badgeGrade = closedByDohmh ? "CLOSED" : grade;
+  const badgeDisplay = closedByDohmh
+    ? "CLOSED"
+    : grade
+      ? (GRADE_LABEL[grade] ?? grade)
+      : undefined;
+  const badgeSublabel = closedByDohmh
+    ? "DOHMH"
+    : grade === "Z" || grade === "P"
+      ? "PENDING"
+      : grade === "N"
+        ? "UNGRADED"
+        : "GRADE";
   const streetPart = restaurant
     ? [restaurant.building, norm(restaurant.street)].filter(Boolean).join(" ")
     : "";
@@ -246,16 +260,10 @@ export default function RestaurantPage() {
                 )}
               </div>
               <GradeBadge
-                grade={grade}
-                display={grade ? (GRADE_LABEL[grade] ?? grade) : undefined}
-                sublabel={
-                  grade === "Z" || grade === "P"
-                    ? "PENDING"
-                    : grade === "N"
-                      ? "UNGRADED"
-                      : "GRADE"
-                }
-                neverInspected={!grade}
+                grade={badgeGrade}
+                display={badgeDisplay}
+                sublabel={badgeSublabel}
+                neverInspected={!restaurant.latest}
                 size="lg"
               />
             </div>
