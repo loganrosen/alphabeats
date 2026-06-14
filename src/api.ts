@@ -31,7 +31,14 @@ export interface Inspection {
   score: number | null;
   violations: Violation[];
   closed: boolean;
+  reopened: boolean;
   reinspection: boolean;
+}
+
+export interface RecentClosureStatus {
+  status: "closed" | "reopened";
+  closureDate: string | undefined;
+  reopenDate: string | undefined;
 }
 
 export interface Restaurant {
@@ -48,6 +55,7 @@ export interface Restaurant {
   inspections: Record<string, Inspection>;
   latest: Inspection | undefined;
   latestGraded: Inspection | undefined;
+  recentClosure?: RecentClosureStatus;
   distance?: number;
 }
 
@@ -101,21 +109,59 @@ function actionIndicatesReopened(action: string | undefined): boolean {
   return lower.includes("re-opened") || lower.includes("reopened");
 }
 
-function latestActionStillClosed(rows: ApiRow[], camis: string): boolean {
+function closureStatusFromRows(
+  rows: ApiRow[],
+  camis: string,
+): RecentClosureStatus | null {
   const restaurantRows = rows.filter((row) => row.camis === camis);
   const latestDate = restaurantRows
     .map((row) => row.inspection_date)
     .filter((date): date is string => Boolean(date))
     .sort((a, b) => new Date(b).getTime() - new Date(a).getTime())[0];
-  if (!latestDate) return false;
+  if (!latestDate) return null;
 
   const latestRows = restaurantRows.filter(
     (row) => row.inspection_date === latestDate,
   );
-  return (
-    latestRows.some((row) => actionIndicatesClosed(row.action)) &&
-    !latestRows.some((row) => actionIndicatesReopened(row.action))
+  const closureDate = restaurantRows
+    .filter((row) => actionIndicatesClosed(row.action))
+    .map((row) => row.inspection_date)
+    .filter((date): date is string => Boolean(date))
+    .sort((a, b) => new Date(b).getTime() - new Date(a).getTime())[0];
+  if (!closureDate) return null;
+
+  const latestClosed = latestRows.some((row) =>
+    actionIndicatesClosed(row.action),
   );
+  const latestReopened = latestRows.some((row) =>
+    actionIndicatesReopened(row.action),
+  );
+  if (latestClosed && !latestReopened) {
+    return {
+      status: "closed",
+      closureDate,
+      reopenDate: undefined,
+    };
+  }
+
+  const reopenDate = restaurantRows
+    .filter(
+      (row) =>
+        actionIndicatesReopened(row.action) &&
+        row.inspection_date &&
+        new Date(row.inspection_date).getTime() >=
+          new Date(closureDate).getTime(),
+    )
+    .map((row) => row.inspection_date)
+    .filter((date): date is string => Boolean(date))
+    .sort((a, b) => new Date(b).getTime() - new Date(a).getTime())[0];
+  if (!reopenDate) return null;
+
+  return {
+    status: "reopened",
+    closureDate,
+    reopenDate,
+  };
 }
 
 function recentRestaurantQuery(
@@ -138,7 +184,7 @@ function recentRestaurantQuery(
 
 export async function fetchRecentRestaurants(
   feed: RecentRestaurantFeed,
-  params: { boro?: string[] } = {},
+  params: { boro?: string[]; includeReopened?: boolean } = {},
 ): Promise<{ rows: ApiRow[]; restaurants: Restaurant[] }> {
   const query = recentRestaurantQuery(feed, params);
   const res = await fetch(`${API}?${query}`);
@@ -160,9 +206,16 @@ export async function fetchRecentRestaurants(
     allRows.push(...((await historyRes.json()) as ApiRow[]));
   }
 
-  const restaurants = groupRows(allRows).filter((r) =>
-    latestActionStillClosed(allRows, r.camis),
-  );
+  const restaurants = groupRows(allRows)
+    .map((r) => {
+      const recentClosure = closureStatusFromRows(allRows, r.camis);
+      return recentClosure ? { ...r, recentClosure } : r;
+    })
+    .filter(
+      (r) =>
+        r.recentClosure &&
+        (params.includeReopened || r.recentClosure.status === "closed"),
+    );
   return { rows: closureRows, restaurants };
 }
 
@@ -328,6 +381,7 @@ export function groupRows(rows: ApiRow[]): Restaurant[] {
         score: r.score != null ? parseInt(r.score, 10) : null,
         violations: [],
         closed: actionIndicatesClosed(r.action),
+        reopened: actionIndicatesReopened(r.action),
         reinspection:
           r.inspection_type?.toLowerCase().includes("re-inspection") ?? false,
       };
@@ -338,6 +392,7 @@ export function groupRows(rows: ApiRow[]): Restaurant[] {
       if (insp.score == null && r.score != null)
         insp.score = parseInt(r.score, 10);
       if (actionIndicatesClosed(r.action)) insp.closed = true;
+      if (actionIndicatesReopened(r.action)) insp.reopened = true;
       if (r.inspection_type?.toLowerCase().includes("re-inspection"))
         insp.reinspection = true;
     }

@@ -105,6 +105,11 @@ function InspectionSection({
               closed by DOHMH
             </span>
           )}
+          {insp.reopened && (
+            <span className="font-mono text-xs text-sky-600 border border-sky-300 rounded px-2 py-0.5 dark:text-sky-300 dark:border-sky-800">
+              reopened by DOHMH
+            </span>
+          )}
           {isLatest && (
             <span className="font-mono text-xs text-yellow-600 border border-yellow-300 rounded px-2 py-0.5 dark:text-yellow-400 dark:border-yellow-700">
               Latest
@@ -177,20 +182,30 @@ export default function RestaurantPage() {
     : [];
 
   const grade = restaurant?.latestGraded?.grade ?? null;
+  const reopenedByDohmh =
+    restaurant?.recentClosure?.status === "reopened" ||
+    (restaurant?.latest?.reopened ?? false);
   const closedByDohmh = restaurant?.latest?.closed ?? false;
-  const badgeGrade = closedByDohmh ? "CLOSED" : grade;
-  const badgeDisplay = closedByDohmh
-    ? "CLOSED"
-    : grade
-      ? (GRADE_LABEL[grade] ?? grade)
-      : undefined;
-  const badgeSublabel = closedByDohmh
-    ? "DOHMH"
-    : grade === "Z" || grade === "P"
-      ? "PENDING"
-      : grade === "N"
-        ? "UNGRADED"
-        : "GRADE";
+  const badgeGrade = reopenedByDohmh
+    ? "REOPENED"
+    : closedByDohmh
+      ? "CLOSED"
+      : grade;
+  const badgeDisplay = reopenedByDohmh
+    ? "REOPENED"
+    : closedByDohmh
+      ? "CLOSED"
+      : grade
+        ? (GRADE_LABEL[grade] ?? grade)
+        : undefined;
+  const badgeSublabel =
+    reopenedByDohmh || closedByDohmh
+      ? "DOHMH"
+      : grade === "Z" || grade === "P"
+        ? "PENDING"
+        : grade === "N"
+          ? "UNGRADED"
+          : "GRADE";
   const streetPart = restaurant
     ? [restaurant.building, norm(restaurant.street)].filter(Boolean).join(" ")
     : "";

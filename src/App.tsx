@@ -75,6 +75,7 @@ function readParams(): {
   groceryForm: GrocerySearchParams;
   geo: GeoParams | null;
   recentFeed: RecentRestaurantFeed | null;
+  recentIncludeReopened: boolean;
 } {
   const p = new URLSearchParams(window.location.search);
   const mode = (
@@ -107,7 +108,14 @@ function readParams(): {
           radius: parseFloat(p.get("radius") ?? "0.25"),
         }
       : null;
-  return { mode, form, groceryForm, geo, recentFeed };
+  return {
+    mode,
+    form,
+    groceryForm,
+    geo,
+    recentFeed,
+    recentIncludeReopened: p.get("include") === "reopened",
+  };
 }
 
 function writeParams(
@@ -131,6 +139,7 @@ function writeParams(
     "radius",
     "view",
     "feed",
+    "include",
   ]) {
     url.searchParams.delete(k);
   }
@@ -152,6 +161,7 @@ function writeParams(
 function writeRecentParams(
   feed: RecentRestaurantFeed,
   boro: string[] = [],
+  includeReopened = false,
 ): void {
   const url = new URL(window.location.href);
   for (const k of [
@@ -166,12 +176,14 @@ function writeRecentParams(
     "lat",
     "lng",
     "radius",
+    "include",
   ]) {
     url.searchParams.delete(k);
   }
   url.searchParams.set("view", "recent");
   url.searchParams.set("feed", feed);
   if (boro.length > 0) url.searchParams.set("boro", boro.join(","));
+  if (includeReopened) url.searchParams.set("include", "reopened");
   window.history.replaceState({}, "", url);
 }
 
@@ -212,6 +224,9 @@ export default function App() {
   const [recentBoro, setRecentBoro] = useState<string[]>(
     () => readParams().form.boro,
   );
+  const [recentIncludeReopened, setRecentIncludeReopened] = useState(
+    () => readParams().recentIncludeReopened,
+  );
   const [result, setResult] = useState<SearchResult>(IDLE);
   const [cuisines, setCuisines] = useState<string[]>([]);
   const [communityBoards, setCommunityBoards] = useState<CommunityBoard[]>([]);
@@ -232,14 +247,16 @@ export default function App() {
     async (
       feed: RecentRestaurantFeed,
       boro: string[] = [],
+      includeReopened = false,
       isRestore = false,
     ) => {
       setMode("restaurant");
       setRecentFeed(feed);
       setRecentBoro(boro);
+      setRecentIncludeReopened(includeReopened);
       setActiveGeo(null);
       clearGeo();
-      writeRecentParams(feed, boro);
+      writeRecentParams(feed, boro, includeReopened);
       setResult({
         status: "loading",
         restaurants: [],
@@ -260,6 +277,7 @@ export default function App() {
       try {
         const { rows, restaurants } = await fetchRecentRestaurants(feed, {
           boro,
+          includeReopened,
         });
         setResult({
           status: "done",
@@ -406,9 +424,15 @@ export default function App() {
       groceryForm: urlGroceryForm,
       geo: urlGeo,
       recentFeed: urlRecentFeed,
+      recentIncludeReopened: urlRecentIncludeReopened,
     } = readParams();
     if (urlRecentFeed) {
-      loadRecentFeed(urlRecentFeed, urlForm.boro, true);
+      loadRecentFeed(
+        urlRecentFeed,
+        urlForm.boro,
+        urlRecentIncludeReopened,
+        true,
+      );
       return;
     }
     setMode(urlMode);
@@ -436,6 +460,7 @@ export default function App() {
   const handleClear = () => {
     setRecentFeed(null);
     setRecentBoro([]);
+    setRecentIncludeReopened(false);
     if (mode === "grocery") {
       setGroceryForm(EMPTY_GROCERY);
       setActiveGeo(null);
@@ -462,6 +487,7 @@ export default function App() {
     setMode(newMode);
     setRecentFeed(null);
     setRecentBoro([]);
+    setRecentIncludeReopened(false);
     setResult(IDLE);
     setActiveGeo(null);
     clearGeo();
@@ -582,7 +608,11 @@ export default function App() {
           <button
             type="button"
             onClick={() =>
-              loadRecentFeed("closures", recentFeed ? recentBoro : form.boro)
+              loadRecentFeed(
+                "closures",
+                recentFeed ? recentBoro : form.boro,
+                recentFeed ? recentIncludeReopened : false,
+              )
             }
             className={`flex-1 py-2.5 font-mono text-sm tracking-wide cursor-pointer transition-colors relative
               ${
@@ -631,16 +661,36 @@ export default function App() {
                   : "Citywide DOHMH closures"}
               </p>
               <p className="text-sm text-zinc-600 dark:text-zinc-300">
-                Restaurants recently closed by the health department that have
-                not yet been re-opened in the inspection data.
+                {recentIncludeReopened
+                  ? "Restaurants recently closed by the health department, including places that have since re-opened."
+                  : "Restaurants recently closed by the health department that have not yet been re-opened in the inspection data."}
               </p>
             </div>
-            <div className="flex flex-col gap-1.5 max-[720px]:mt-4">
-              <span className={labelCls}>Borough</span>
-              <BoroughFilter
-                value={recentBoro}
-                onChange={(boro) => loadRecentFeed(recentFeed, boro)}
-              />
+            <div className="flex flex-col gap-3 max-[720px]:mt-4">
+              <div className="flex flex-col gap-1.5">
+                <span className={labelCls}>Borough</span>
+                <BoroughFilter
+                  value={recentBoro}
+                  onChange={(boro) =>
+                    loadRecentFeed(recentFeed, boro, recentIncludeReopened)
+                  }
+                />
+              </div>
+              <label className="flex items-center gap-2 font-mono text-xs text-zinc-600 dark:text-zinc-300 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={recentIncludeReopened}
+                  onChange={(event) =>
+                    loadRecentFeed(
+                      recentFeed,
+                      recentBoro,
+                      event.currentTarget.checked,
+                    )
+                  }
+                  className="accent-yellow-500"
+                />
+                Include reopened
+              </label>
             </div>
           </div>
         </div>

@@ -95,7 +95,7 @@ describe("fetchRecentRestaurants", () => {
     expect(where).toContain("(boro='Queens' OR boro='Bronx')");
   });
 
-  it("hydrates closure restaurants and keeps only restaurants still closed", async () => {
+  it("defaults to still-closed restaurants and can include reopened closure events", async () => {
     const closureRows = [
       {
         camis: "50000001",
@@ -137,7 +137,12 @@ describe("fetchRecentRestaurants", () => {
         action: "Establishment re-opened by DOHMH.",
       },
     ];
-    const mock = mockFetchResponses([closureRows, historyRows]);
+    const mock = mockFetchResponses([
+      closureRows,
+      historyRows,
+      closureRows,
+      historyRows,
+    ]);
     const result = await fetchRecentRestaurants("closures");
     expect(mock).toHaveBeenCalledTimes(2);
     expect(capturedWhereAt(mock, 1)).toContain(
@@ -147,9 +152,31 @@ describe("fetchRecentRestaurants", () => {
     expect(result.restaurants).toHaveLength(1);
     expect(result.restaurants[0].camis).toBe("50000001");
     expect(result.restaurants[0].latest?.closed).toBe(true);
+    expect(result.restaurants[0].recentClosure).toEqual({
+      status: "closed",
+      closureDate: "2026-06-01T00:00:00.000",
+      reopenDate: undefined,
+    });
     expect(result.restaurants[0].latestGraded?.gradeDate).toBe(
       "2026-06-02T00:00:00.000",
     );
+
+    const withReopened = await fetchRecentRestaurants("closures", {
+      includeReopened: true,
+    });
+    expect(mock).toHaveBeenCalledTimes(4);
+    expect(withReopened.restaurants.map((r) => r.camis).sort()).toEqual([
+      "50000001",
+      "50000002",
+    ]);
+    expect(
+      withReopened.restaurants.find((r) => r.camis === "50000002")
+        ?.recentClosure,
+    ).toEqual({
+      status: "reopened",
+      closureDate: "2026-06-01T00:00:00.000",
+      reopenDate: "2026-06-02T00:00:00.000",
+    });
   });
 
   it("throws on non-OK HTTP response", async () => {
