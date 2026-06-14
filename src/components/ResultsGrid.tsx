@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import type { DatasetMode } from "../App.js";
 import type { RecentRestaurantFeed, Restaurant } from "../api.js";
 import type { Grocery } from "../groceryApi.js";
+import { recentRestaurantTimestamp } from "../recentRestaurants.js";
 import GroceryCard from "./GroceryCard.js";
 import MapView from "./MapView.js";
 import RestaurantCard from "./RestaurantCard.js";
@@ -27,11 +28,6 @@ const RECENT_FEED_TITLE: Record<RecentRestaurantFeed, string> = {
   closures: "Recent closures",
 };
 
-function recentTimestamp(r: Restaurant) {
-  const date = r.latest?.date;
-  return new Date(date ?? "").getTime();
-}
-
 function applySortKey(list: Restaurant[], key: SortKey): Restaurant[] {
   const copy = [...list];
   if (key === "grade")
@@ -47,7 +43,9 @@ function applySortKey(list: Restaurant[], key: SortKey): Restaurant[] {
       (a, b) => (b.latest?.score ?? -1) - (a.latest?.score ?? -1),
     );
   if (key === "recent")
-    return copy.sort((a, b) => recentTimestamp(b) - recentTimestamp(a));
+    return copy.sort(
+      (a, b) => recentRestaurantTimestamp(b) - recentRestaurantTimestamp(a),
+    );
   if (key === "distance")
     return copy.sort(
       (a, b) => (a.distance ?? Infinity) - (b.distance ?? Infinity),

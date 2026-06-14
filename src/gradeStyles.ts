@@ -3,6 +3,7 @@ export const GRADE_STYLES: Record<string, string> = {
   B: "bg-amber-600",
   C: "bg-red-600",
   CLOSED: "bg-orange-600",
+  REOPENED: "bg-sky-700",
 };
 
 export const GRADE_TEXT: Record<string, string> = {
