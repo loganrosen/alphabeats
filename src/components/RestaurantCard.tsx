@@ -2,7 +2,6 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import type { Inspection, Restaurant } from "../api.js";
 import { GRADE_LABEL, GRADE_TEXT, gradeForScore } from "../gradeStyles.js";
-import { useYelpEnrichment } from "../hooks/useYelpEnrichment.js";
 import {
   fmtDate,
   fmtDistance,
@@ -16,7 +15,6 @@ import GradeBadge from "./GradeBadge.js";
 import GradeInfo from "./GradeInfo.js";
 import InfoPopover from "./InfoPopover.js";
 import ViolationList from "./ViolationList.js";
-import YelpBadge from "./YelpBadge.js";
 
 function abbrevInspType(type: string | undefined): string {
   if (!type) return "";
@@ -120,9 +118,7 @@ export default function RestaurantCard({
   restaurant: Restaurant;
 }) {
   const [historyOpen, setHistoryOpen] = useState(false);
-
   const streetPart = [r.building, norm(r.street)].filter(Boolean).join(" ");
-  const yelp = useYelpEnrichment(r.dba, streetPart, "New York", r.zipcode);
 
   const insp = r.latest;
   const gradedInsp = r.latestGraded;
@@ -130,7 +126,6 @@ export default function RestaurantCard({
   const grade = gradedInsp?.grade ?? null;
   const addr = [streetPart, r.zipcode, r.boro].filter(Boolean).join(" · ");
   const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([r.dba, streetPart, r.zipcode, "New York NY"].filter(Boolean).join(" "))}`;
-  const yelpUrl = `https://www.yelp.com/search?find_desc=${encodeURIComponent(r.dba)}&find_loc=${encodeURIComponent([streetPart, r.zipcode, "New York NY"].filter(Boolean).join(", "))}`;
   const allInspections = Object.values(r.inspections).sort(
     (a, b) =>
       new Date(b.date ?? "").getTime() - new Date(a.date ?? "").getTime(),
@@ -321,11 +316,6 @@ export default function RestaurantCard({
             : `Last inspected ${fmtDate(insp?.date)}${fmtRelativeAge(insp?.date) ? ` · ${fmtRelativeAge(insp?.date)}` : ""}`}
         </span>
         <div className="flex items-center gap-3">
-          <YelpBadge
-            data={yelp.data}
-            loading={yelp.loading}
-            fallbackUrl={yelpUrl}
-          />
           <a
             href={`https://a816-health.nyc.gov/ABCEatsRestaurants/#!/Search/${r.camis}`}
             target="_blank"

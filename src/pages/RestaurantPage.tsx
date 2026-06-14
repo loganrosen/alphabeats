@@ -6,9 +6,7 @@ import GradeBadge from "../components/GradeBadge.js";
 import GradeTimeline from "../components/GradeTimeline.js";
 import MiniMap from "../components/MiniMap.js";
 import ViolationList from "../components/ViolationList.js";
-import YelpBadge from "../components/YelpBadge.js";
 import { GRADE_LABEL, GRADE_TEXT, gradeForScore } from "../gradeStyles.js";
-import { useYelpEnrichment } from "../hooks/useYelpEnrichment.js";
 import {
   fmtDate,
   fmtRelativeAge,
@@ -136,16 +134,6 @@ export default function RestaurantPage() {
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
-  const streetPart_ = restaurant
-    ? [restaurant.building, norm(restaurant.street)].filter(Boolean).join(" ")
-    : "";
-  const yelp = useYelpEnrichment(
-    restaurant?.dba ?? "",
-    streetPart_,
-    "New York",
-    restaurant?.zipcode ?? "",
-  );
-
   useEffect(() => {
     window.scrollTo(0, 0);
     if (passedRestaurant) {
@@ -187,9 +175,6 @@ export default function RestaurantPage() {
     : "";
   const mapsUrl = restaurant
     ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([restaurant.dba, streetPart, restaurant.zipcode, "New York NY"].filter(Boolean).join(" "))}`
-    : "";
-  const yelpUrl = restaurant
-    ? `https://www.yelp.com/search?find_desc=${encodeURIComponent(restaurant.dba)}&find_loc=${encodeURIComponent([streetPart, restaurant.zipcode, "New York NY"].filter(Boolean).join(", "))}`
     : "";
 
   return (
@@ -277,11 +262,6 @@ export default function RestaurantPage() {
               >
                 Google Maps ↗
               </a>
-              <YelpBadge
-                data={yelp.data}
-                loading={yelp.loading}
-                fallbackUrl={yelpUrl}
-              />
               {restaurant.phone && (
                 <a
                   href={`tel:${restaurant.phone}`}
