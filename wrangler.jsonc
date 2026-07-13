@@ -1,0 +1,19 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "eatsafe",
+  "compatibility_date": "2026-07-12",
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "single-page-application"
+  },
+  "routes": [
+    {
+      "pattern": "eatsafe.nyc/*",
+      "zone_name": "eatsafe.nyc"
+    },
+    {
+      "pattern": "www.eatsafe.nyc/*",
+      "zone_name": "eatsafe.nyc"
+    }
+  ]
+}
