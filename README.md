@@ -29,4 +29,4 @@ npm run dev
 
 ## Deploy
 
-Pushes to `main` automatically deploy to [eatsafe.nyc](https://eatsafe.nyc) via GitHub Actions.
+Pushes to `main` automatically deploy to [eatsafe.nyc](https://eatsafe.nyc) on Cloudflare Workers via GitHub Actions.
