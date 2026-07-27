@@ -21,7 +21,7 @@ jobs:
 
       - name: Enable auto-merge for eligible npm updates
         if: >-
-          steps.metadata.outputs.package-ecosystem == 'npm' &&
+          steps.metadata.outputs.package-ecosystem == 'npm_and_yarn' &&
           !contains(steps.metadata.outputs.dependency-names, 'wrangler') &&
           (
             steps.metadata.outputs.update-type == 'version-update:semver-patch' ||
