@@ -8,6 +8,7 @@
     "deploy": "npm run build && wrangler deploy",
     "preview": "vite preview",
     "test": "vitest run",
+    "check:react-versions": "node scripts/check-react-versions.mjs",
     "lint": "biome check .",
     "prepare": "husky"
   },
