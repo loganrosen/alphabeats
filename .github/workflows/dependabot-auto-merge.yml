@@ -20,6 +20,59 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Check out the Dependabot update
+        if: >-
+          steps.metadata.outputs.package-ecosystem == 'npm_and_yarn' &&
+          contains(steps.metadata.outputs.dependency-names, '@biomejs/biome')
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+
+      - name: Set up Node.js
+        if: >-
+          steps.metadata.outputs.package-ecosystem == 'npm_and_yarn' &&
+          contains(steps.metadata.outputs.dependency-names, '@biomejs/biome')
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Migrate the Biome configuration
+        id: biome-migration
+        if: >-
+          steps.metadata.outputs.package-ecosystem == 'npm_and_yarn' &&
+          contains(steps.metadata.outputs.dependency-names, '@biomejs/biome')
+        run: |
+          npm ci --ignore-scripts
+          npx --no-install biome migrate --write
+
+          if git diff --quiet -- biome.json; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Commit the Biome migration
+        if: steps.biome-migration.outputs.changed == 'true'
+        env:
+          GH_REPO: ${{ github.repository }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+        run: |
+          content="$(base64 < biome.json | tr -d '\n')"
+          current_sha="$(git rev-parse HEAD:biome.json)"
+
+          gh api \
+            --method PUT \
+            "repos/$GH_REPO/contents/biome.json" \
+            -f message="chore: migrate Biome configuration" \
+            -f content="$content" \
+            -f sha="$current_sha" \
+            -f branch="$HEAD_REF"
+
+          gh workflow run ci.yml --repo "$GH_REPO" --ref "$HEAD_REF"
+
       - name: Enable auto-merge for eligible npm updates
         if: >-
           steps.metadata.outputs.package-ecosystem == 'npm_and_yarn' &&
