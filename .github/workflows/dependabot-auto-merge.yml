@@ -5,6 +5,7 @@ on:
     types: [opened, synchronize, reopened, ready_for_review]
 
 permissions:
+  actions: write
   contents: write
   pull-requests: write
 
@@ -31,3 +32,34 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_URL: ${{ github.event.pull_request.html_url }}
         run: gh pr merge --auto --squash "$PR_URL"
+
+      - name: Deploy the merged update
+        if: >-
+          steps.metadata.outputs.package-ecosystem == 'npm_and_yarn' &&
+          !contains(steps.metadata.outputs.dependency-names, 'wrangler') &&
+          (
+            steps.metadata.outputs.update-type == 'version-update:semver-patch' ||
+            steps.metadata.outputs.update-type == 'version-update:semver-minor'
+          )
+        env:
+          GH_REPO: ${{ github.repository }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+        run: |
+          for attempt in {1..60}; do
+            state="$(gh pr view "$PR_URL" --json state --jq .state)"
+            case "$state" in
+              MERGED)
+                gh workflow run deploy.yml --repo "$GH_REPO" --ref main
+                exit 0
+                ;;
+              CLOSED)
+                echo "::error::Dependabot pull request closed without merging"
+                exit 1
+                ;;
+            esac
+            sleep 5
+          done
+
+          echo "::error::Timed out waiting for Dependabot pull request to merge"
+          exit 1
